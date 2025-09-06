@@ -9,6 +9,7 @@ export default function Home() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [busyVisitId, setBusyVisitId] = useState<string | null>(null);
 
   const onLookup = async () => {
     const plate = normalizePlate(input);
@@ -38,9 +39,47 @@ export default function Home() {
         }),
       });
       const json = await res.json();
-      alert(json.ok ? 'Check-in feito!' : `Falhou: ${json.error}`);
+      if (!json.ok) {
+        alert(`Falhou: ${json.error}`);
+        return;
+      }
+      alert('Check-in feito!');
+      // Recarrega a busca para atualizar a lista de visitas
+      onLookup();
     } finally {
       setCreating(false);
+    }
+  };
+
+  const onCheckout = async (visitId: string) => {
+    setBusyVisitId(visitId);
+    try {
+      const res = await fetch(`/api/visits/${visitId}/checkout`, { method: 'POST' });
+      const json = await res.json();
+      if (!json.ok) {
+        alert(`Falhou: ${json.error}`);
+        return;
+      }
+      alert('Checkout feito!');
+      onLookup();
+    } finally {
+      setBusyVisitId(null);
+    }
+  };
+
+  const onPdf = async (visitId: string) => {
+    setBusyVisitId(visitId);
+    try {
+      const res = await fetch(`/api/pdf/visit/${visitId}`, { method: 'POST' });
+      const json = await res.json();
+      if (!json.ok) {
+        alert(`PDF falhou: ${json.error}`);
+        return;
+      }
+      // Abre o PDF em nova aba (no celular abre o viewer)
+      window.open(json.url, '_blank');
+    } finally {
+      setBusyVisitId(null);
     }
   };
 
@@ -83,15 +122,40 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="mt-4">
-                <b>Últimas visitas (desta filial):</b>
-                <ul className="list-disc pl-6">
-                  {(data.visits ?? []).map((v: Visit) => (
-                    <li key={v.id}>
-                      {new Date(v.checkin_time).toLocaleString()} —{' '}
-                      {v.checkout_time ? `Saiu: ${new Date(v.checkout_time).toLocaleString()}` : 'Em andamento'}
-                    </li>
-                  ))}
+              <div className="mt-4 space-y-2">
+                <b>Visitas desta placa (filial atual):</b>
+                <ul className="space-y-2">
+                  {(data.visits ?? []).map((v: Visit) => {
+                    const aberta = !v.checkout_time;
+                    return (
+                      <li key={v.id} className="rounded border p-2">
+                        <div className="text-sm">
+                          <div><b>Entrada:</b> {new Date(v.checkin_time).toLocaleString()}</div>
+                          <div>
+                            <b>Status:</b> {aberta ? 'Em andamento' : `Saiu: ${new Date(v.checkout_time!).toLocaleString()}`}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                          {aberta && (
+                            <button
+                              onClick={() => onCheckout(v.id)}
+                              className="rounded bg-amber-600 px-3 py-1 text-white"
+                              disabled={busyVisitId === v.id}
+                            >
+                              {busyVisitId === v.id ? 'Finalizando...' : 'Checkout'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onPdf(v.id)}
+                            className="rounded bg-gray-700 px-3 py-1 text-white"
+                            disabled={busyVisitId === v.id}
+                          >
+                            {busyVisitId === v.id ? 'Gerando...' : 'PDF'}
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </>
