@@ -4,6 +4,16 @@ import { normalizePlate } from '@/lib/utils';
 
 type ApiResp<T> = { ok: true; data: T } | { ok: false; error: string };
 
+async function parseJsonSafe(res: Response) {
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    // tenta ler texto para debugar
+    const text = await res.text().catch(() => '');
+    throw new Error(text || `Servidor retornou ${res.status} sem JSON.`);
+  }
+  return res.json();
+}
+
 export default function CadastroPage() {
   // Pessoa
   const [pFullName, setPFullName] = useState('');
@@ -37,9 +47,10 @@ export default function CadastroPage() {
           notes: pNotes.trim() || null,
         }),
       });
-      const json = (await res.json()) as ApiResp<any>;
+
+      const json = (await parseJsonSafe(res)) as ApiResp<any>;
       if (!json.ok) {
-        alert(`Erro: ${json.error}`);
+        alert(json.error);
         return;
       }
       alert('Pessoa cadastrada com sucesso!');
@@ -72,9 +83,10 @@ export default function CadastroPage() {
           color: vColor.trim() || null,
         }),
       });
-      const json = (await res.json()) as ApiResp<any>;
+
+      const json = (await parseJsonSafe(res)) as ApiResp<any>;
       if (!json.ok) {
-        alert(`Erro: ${json.error}`);
+        alert(json.error);
         return;
       }
       alert('Veículo cadastrado com sucesso!');
