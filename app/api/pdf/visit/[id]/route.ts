@@ -25,33 +25,36 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
 
   // Tipagem do evento 'data' para evitar erro TS
   doc.on('data', (c: Uint8Array) => chunks.push(Buffer.from(c)));
-  doc.on('end', async () => {
-    const pdf = Buffer.concat(chunks);
-    const path = `visits/${params.id}.pdf`;
+  // Vamos esperar o PDF terminar e devolver o link assinado na mesma resposta
+  const done = new Promise<string | null>((resolve) => {
+    doc.on('end', async () => {
+      const pdf = Buffer.concat(chunks);
+      const path = `visits/${params.id}.pdf`;
 
-    // 3) Upload no bucket privado "exports"
-    const up = await supabaseAdmin.storage
-      .from('exports')
-      .upload(path, pdf, {
-        contentType: 'application/pdf',
-        upsert: true,
+      const up = await supabaseAdmin.storage
+        .from('exports')
+        .upload(path, pdf, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+
+      if (up.error) {
+        resolve(null);
+        return;
+      }
+
+      const signed = await supabaseAdmin.storage
+        .from('exports')
+        .createSignedUrl(path, 60 * 10); // 10 minutos
+
+      // Registrar evento de auditoria
+      await supabaseAdmin.from('visit_events').insert({
+        visit_id: params.id,
+        type: 'pdf_exported',
+        meta: { url: signed.data?.signedUrl },
       });
 
-    if (up.error) {
-      // se der erro no upload, apenas registra erro básico na resposta
-      return;
-    }
-
-    // 4) URL assinada temporária para acessar o PDF
-    const signed = await supabaseAdmin.storage
-      .from('exports')
-      .createSignedUrl(path, 60 * 10); // 10 minutos
-
-    // 5) Registrar evento de auditoria
-    await supabaseAdmin.from('visit_events').insert({
-      visit_id: params.id,
-      type: 'pdf_exported',
-      meta: { url: signed.data?.signedUrl },
+      resolve(signed.data?.signedUrl ?? null);
     });
   });
 
@@ -66,6 +69,11 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
   }
   doc.end();
 
-  // 6) Resposta imediata (o upload/registro acontece no 'end')
-  return NextResponse.json({ ok: true });
+  // 3) Espera terminar e retorna o link
+  const signedUrl = await done;
+  if (!signedUrl) {
+    return NextResponse.json({ ok: false, error: 'Falha ao salvar ou assinar PDF' }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, url: signedUrl });
 }
