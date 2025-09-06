@@ -4,6 +4,15 @@ import { normalizePlate } from '@/lib/utils';
 
 type Visit = { id: string; checkin_time: string; checkout_time: string | null };
 
+async function parseJsonSafe(res: Response) {
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || `Servidor retornou ${res.status} sem JSON.`);
+  }
+  return res.json();
+}
+
 export default function Home() {
   const [input, setInput] = useState('');
   const [data, setData] = useState<any>(null);
@@ -72,13 +81,13 @@ export default function Home() {
     setLastPdfUrl(null);
     try {
       const res = await fetch(`/api/pdf/visit/${visitId}`, { method: 'POST' });
-      const json = await res.json();
+      const json = await parseJsonSafe(res);
       if (!json.ok || !json.url) {
         alert(`PDF falhou: ${json.error ?? 'Sem URL retornada'}`);
         return;
       }
       setLastPdfUrl(json.url);
-      // Em alguns navegadores mobile window.open é bloqueado → redireciona
+      // Mobile: redireciona (mais confiável que window.open)
       window.location.href = json.url;
     } catch (e: any) {
       alert(`Erro ao gerar PDF: ${e?.message ?? e}`);
