@@ -1,0 +1,40 @@
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { normalizePlate } from '@/lib/utils';
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const plateRaw: string | undefined = body?.plate;
+    const model: string | null = body?.model ?? null;
+    const color: string | null = body?.color ?? null;
+
+    const plate = normalizePlate(plateRaw ?? '');
+    if (!plate) {
+      return NextResponse.json({ ok: false, error: 'Placa inválida' }, { status: 400 });
+    }
+
+    const companyId = process.env.COMPANY_ID!;
+    const insert = {
+      company_id: companyId,
+      plate,
+      model: model || null,
+      color: color || null,
+    };
+
+    const { data, error } = await supabaseAdmin
+      .from('vehicles')
+      .insert(insert)
+      .select()
+      .single();
+
+    if (error) {
+      // quebra por UNIQUE (placa já cadastrada na empresa) ou outros
+      return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ ok: true, data });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message ?? 'Erro inesperado' }, { status: 500 });
+  }
+}
