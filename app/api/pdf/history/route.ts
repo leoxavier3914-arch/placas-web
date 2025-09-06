@@ -16,6 +16,17 @@ async function ensureExportsBucket() {
   } catch { /* já existe */ }
 }
 
+// 🔒 Tipos mínimos para garantir build
+type VisitRow = {
+  id: string;
+  checkin_time: string;
+  checkout_time: string | null;
+  purpose?: string | null;
+  people?: { full_name?: string | null; doc_number?: string | null } | null;
+  vehicles?: { plate?: string | null; model?: string | null; color?: string | null } | null;
+  branches?: { name?: string | null } | null;
+};
+
 /**
  * POST /api/pdf/history?start=YYYY-MM-DD&end=YYYY-MM-DD
  * Gera PDF com TODO o histórico do período (check-in OU check-out no intervalo) da filial atual.
@@ -42,7 +53,6 @@ export async function POST(req: Request) {
       `and(checkin_time.gte.${startIso},checkin_time.lte.${endIso}),` +
       `and(checkout_time.gte.${startIso},checkout_time.lte.${endIso})`;
 
-    // Buscar TUDO do período (sem paginação, mas com limite de segurança)
     const { data, error } = await supabaseAdmin
       .from('visits')
       .select(
@@ -55,11 +65,14 @@ export async function POST(req: Request) {
       .eq('branch_id', process.env.DEFAULT_BRANCH_ID!)
       .or(orExpr)
       .order('checkin_time', { ascending: false })
-      .limit(5000); // limite de segurança
+      .limit(5000);
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
     }
+
+    // 🔧 Tipagem explícita do array
+    const list: VisitRow[] = Array.isArray(data) ? (data as unknown as VisitRow[]) : [];
 
     // Montar PDF (tabela simples, com quebra de página)
     const pdf = await PDFDocument.create();
@@ -106,26 +119,23 @@ export async function POST(req: Request) {
     page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, color: rgb(0, 0, 0) });
     y -= lineHeight;
 
-    const rows = (data ?? []).map((v) => ({
-      entrada: new Date(v.checkin_time).toLocaleString(),
-      saida: v.checkout_time ? new Date(v.checkout_time).toLocaleString() : '-',
-      placa: v.vehicles?.plate ?? '-',
-      pessoa: v.people?.full_name ?? '-',
-    }));
-
-    if (rows.length === 0) {
+    if (list.length === 0) {
       drawText('Nenhum registro no período.', margin);
     } else {
-      for (const r of rows) {
+      for (const v of list) {
+        const entrada = new Date(v.checkin_time).toLocaleString();
+        const saida   = v.checkout_time ? new Date(v.checkout_time).toLocaleString() : '-';
+        const placa   = v.vehicles?.plate ?? '-';
+        const pessoa  = v.people?.full_name ?? '-';
+        const nome    = pessoa.length > 28 ? pessoa.slice(0, 27) + '…' : pessoa;
+
         // quebra de página
         if (y < margin + 40) newPage();
 
-        drawText(r.entrada, colX.entrada);
-        drawText(r.saida,   colX.saida);
-        drawText(r.placa,   colX.placa);
-        // nome pode ser longo: truncar
-        const nome = r.pessoa.length > 28 ? r.pessoa.slice(0, 27) + '…' : r.pessoa;
-        drawText(nome,      colX.pessoa);
+        drawText(entrada, colX.entrada);
+        drawText(saida,   colX.saida);
+        drawText(placa,   colX.placa);
+        drawText(nome,    colX.pessoa);
 
         y -= lineHeight + rowGap;
       }
@@ -156,7 +166,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Auditoria opcional
     await supabaseAdmin.from('visit_events').insert({
       visit_id: null,
       type: 'history_pdf_exported',
