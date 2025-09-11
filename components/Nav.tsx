@@ -15,7 +15,7 @@ export default function Nav() {
 
   return (
     <nav className="bg-white shadow">
-      <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-4 px-4 py-3">
+      <div className="flex w-full flex-wrap items-center justify-center gap-4 px-4 py-3">
         {links.map(({ href, label }) => {
           const active = pathname === href;
           return (
