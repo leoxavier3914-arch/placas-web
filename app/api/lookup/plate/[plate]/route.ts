@@ -5,6 +5,7 @@ import { normalizePlate } from '@/lib/utils';
 export async function GET(_: Request, { params }: { params: { plate: string } }) {
   const plate = normalizePlate(params.plate);
   const companyId = process.env.COMPANY_ID;
+  console.log('lookup', companyId, plate);
   if (!companyId) {
     console.error('COMPANY_ID not configured');
     return NextResponse.json(
@@ -20,6 +21,7 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
     .eq('company_id', companyId)
     .eq('plate', plate)
     .maybeSingle();
+  console.log('vehicle', vehicle);
 
   if (vehErr) return NextResponse.json({ ok: false, error: vehErr.message }, { status: 400 });
   if (vehicle) {
