@@ -185,18 +185,18 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <section className="rounded-lg bg-white p-6 shadow">
-        <h1 className="text-xl font-semibold text-center sm:text-left">Controle de Placas</h1>
-        <p className="mt-2 text-center sm:text-left">Digite a placa para verificar:</p>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <h1 className="text-xl font-semibold text-center">Controle de Placas</h1>
+        <p className="mt-2 text-center">Digite a placa para verificar:</p>
+        <div className="mt-4 flex flex-col items-center gap-2">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ex: ABC1234"
-            className="flex-1 rounded border px-3 py-2"
+            className="w-full max-w-xs rounded border px-3 py-2"
           />
           <button
             onClick={onVerify}
-            className="rounded bg-green-600 px-4 py-2 text-white sm:w-auto"
+            className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white"
           >
             Verificar
           </button>
