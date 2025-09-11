@@ -2,32 +2,10 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
 
-export async function GET() {
-  try {
-    const supabaseAdmin = getSupabaseAdmin();
-    const { data, error } = await supabaseAdmin
-      .from('authorized')
-      .select('*')
-      .eq('company_id', process.env.COMPANY_ID!)
-      .order('name', { ascending: true });
-
-    if (error) {
-      return NextResponse.json(
-        { ok: false, error: error.message },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({ ok: true, data });
-  } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, error: e?.message ?? 'Erro inesperado no servidor.' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(req: Request) {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const body = await req.json().catch(() => null);
     if (!body) {
@@ -49,16 +27,11 @@ export async function POST(req: Request) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
-    const insert = {
-      company_id: process.env.COMPANY_ID!,
-      plate,
-      name,
-      department,
-    };
-
     const { data, error } = await supabaseAdmin
       .from('authorized')
-      .insert(insert)
+      .update({ plate, name, department })
+      .eq('id', params.id)
+      .eq('company_id', process.env.COMPANY_ID!)
       .select()
       .single();
 
@@ -80,3 +53,29 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function DELETE(
+  _: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+      .from('authorized')
+      .delete()
+      .eq('id', params.id)
+      .eq('company_id', process.env.COMPANY_ID!);
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: e?.message ?? 'Erro inesperado no servidor.' },
+      { status: 500 }
+    );
+  }
+}
+

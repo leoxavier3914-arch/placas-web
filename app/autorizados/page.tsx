@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 
 export default function AutorizadosPage() {
@@ -7,6 +7,19 @@ export default function AutorizadosPage() {
   const [name, setName] = useState('');
   const [department, setDepartment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [authorized, setAuthorized] = useState<any[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const fetchAuthorized = async () => {
+    const res = await fetch('/api/authorized', { cache: 'no-store' });
+    const json = await res.json().catch(() => null);
+    if (res.ok && json?.data) setAuthorized(json.data);
+    else alert(json?.error || 'Falha ao carregar lista.');
+  };
+
+  useEffect(() => {
+    fetchAuthorized();
+  }, []);
 
   const submit = async () => {
     const p = normalizePlate(plate);
@@ -16,8 +29,8 @@ export default function AutorizadosPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/authorized', {
-        method: 'POST',
+      const res = await fetch(editId ? `/api/authorized/${editId}` : '/api/authorized', {
+        method: editId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plate: p, name: name.trim(), department: department.trim() }),
         cache: 'no-store',
@@ -27,14 +40,41 @@ export default function AutorizadosPage() {
         alert(json?.error || 'Falha ao salvar.');
         return;
       }
-      alert('Registro salvo com sucesso!');
+      alert(editId ? 'Registro atualizado com sucesso!' : 'Registro salvo com sucesso!');
       setPlate('');
       setName('');
       setDepartment('');
+      setEditId(null);
+      fetchAuthorized();
     } catch (e: any) {
       alert(e?.message ?? e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startEdit = (a: any) => {
+    setEditId(a.id);
+    setPlate(a.plate);
+    setName(a.name);
+    setDepartment(a.department);
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('Deseja excluir este registro?')) return;
+    try {
+      const res = await fetch(`/api/authorized/${id}`, {
+        method: 'DELETE',
+        cache: 'no-store',
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        alert(json?.error || 'Falha ao excluir.');
+        return;
+      }
+      fetchAuthorized();
+    } catch (e: any) {
+      alert(e?.message ?? e);
     }
   };
 
@@ -74,8 +114,47 @@ export default function AutorizadosPage() {
           className="rounded bg-green-600 px-4 py-2 text-white"
           disabled={loading}
         >
-          {loading ? 'Salvando...' : 'Salvar'}
+          {loading
+            ? editId
+              ? 'Atualizando...'
+              : 'Salvando...'
+            : editId
+            ? 'Atualizar'
+            : 'Salvar'}
         </button>
+      </div>
+
+      <div className="rounded border bg-white p-4">
+        {authorized.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhum autorizado cadastrado.</p>
+        ) : (
+          <ul className="divide-y">
+            {authorized.map((a) => (
+              <li key={a.id} className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium">{a.plate}</p>
+                  <p className="text-sm text-gray-600">
+                    {a.name} - {a.department}
+                  </p>
+                </div>
+                <div className="space-x-2">
+                  <button
+                    onClick={() => startEdit(a)}
+                    className="rounded bg-blue-600 px-3 py-1 text-white text-sm"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => remove(a.id)}
+                    className="rounded bg-red-600 px-3 py-1 text-white text-sm"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
