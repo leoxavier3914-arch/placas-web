@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -8,6 +8,7 @@ export async function POST(req: Request) {
   const companyId = process.env.COMPANY_ID!;
   const branchId = process.env.DEFAULT_BRANCH_ID!;
 
+  const supabaseAdmin = getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from('visits')
     .insert({

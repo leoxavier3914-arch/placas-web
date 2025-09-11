@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 /** Converte '2025-09-06' -> '2025-09-06T00:00:00.000Z' e fim do dia */
 function toIsoStart(d: string) { return new Date(d + 'T00:00:00.000Z').toISOString(); }
@@ -11,6 +11,7 @@ function toIsoEnd(d: string)   { return new Date(d + 'T23:59:59.999Z').toISOStri
  */
 export async function GET(req: Request) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const url = new URL(req.url);
     const start = url.searchParams.get('start'); // yyyy-mm-dd
     const end   = url.searchParams.get('end');   // yyyy-mm-dd

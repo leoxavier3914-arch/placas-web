@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request) {
   try {
@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       // se sua tabela tiver defaults para doc_type/doc_country (ex.: 'CPF'/'BR'), deixe que o banco aplique
     };
 
+    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('people')
       .insert(insert)
