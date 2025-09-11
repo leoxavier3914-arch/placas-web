@@ -13,16 +13,19 @@ export default function Nav() {
   ];
 
   return (
-    <nav className="bg-white shadow px-4 py-3">
-      <div className="mx-auto max-w-3xl flex gap-4">
+    <nav className="bg-white shadow">
+      <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-4 px-4 py-3">
         {links.map(({ href, label }) => {
           const active = pathname === href;
           return (
             <Link
               key={href}
               href={href}
-              className={`font-medium hover:underline ${
-                active ? "text-blue-800" : "text-blue-600"
+              aria-current={active ? "page" : undefined}
+              className={`font-medium transition-colors hover:text-blue-800 hover:underline ${
+                active
+                  ? "text-blue-800 underline decoration-2 underline-offset-4"
+                  : "text-blue-600"
               }`}
             >
               {label}

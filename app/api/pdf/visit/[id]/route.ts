@@ -1,12 +1,13 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-async function ensureExportsBucket() {
+async function ensureExportsBucket(client: SupabaseClient) {
   try {
-    await supabaseAdmin.storage.createBucket('exports', {
+    await client.storage.createBucket('exports', {
       public: false,
       fileSizeLimit: 50 * 1024 * 1024
     });
@@ -17,7 +18,8 @@ async function ensureExportsBucket() {
 
 export async function POST(_: Request, { params }: { params: { id: string } }) {
   try {
-    await ensureExportsBucket();
+    const supabaseAdmin = getSupabaseAdmin();
+    await ensureExportsBucket(supabaseAdmin);
 
     // 1) Buscar a visita + joins
     const { data: visit, error } = await supabaseAdmin

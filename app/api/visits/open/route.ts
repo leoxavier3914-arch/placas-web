@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 // Returns all visits without a checkout time so the homepage
 // can display plates currently in progress.
@@ -8,6 +8,7 @@ export const revalidate = 0;
 
 
 export async function GET() {
+  const supabaseAdmin = getSupabaseAdmin();
   const companyId = process.env.COMPANY_ID!;
   const branchId = process.env.DEFAULT_BRANCH_ID!;
 

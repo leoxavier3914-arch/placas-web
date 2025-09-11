@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
 
 export async function GET(_: Request, { params }: { params: { plate: string } }) {
   const plate = normalizePlate(params.plate);
 
+  const supabaseAdmin = getSupabaseAdmin();
   const { data: vehicle, error: vehErr } = await supabaseAdmin
     .from('vehicles')
     .select('*')
