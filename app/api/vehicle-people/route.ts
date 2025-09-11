@@ -5,11 +5,19 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('vehicle_people')
       .select('vehicle_id, person_id, people:people (id, full_name)')
-      .eq('company_id', process.env.COMPANY_ID);
+      .eq('company_id', companyId);
     if (vehicleId) query = query.eq('vehicle_id', vehicleId);
     const { data, error } = await query;
     if (error)
@@ -45,11 +53,19 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')
       .insert({
-        company_id: process.env.COMPANY_ID,
+        company_id: companyId,
         vehicle_id: vehicleId,
         person_id: personId,
       });
@@ -85,11 +101,19 @@ export async function DELETE(req: Request) {
         { status: 400 }
       );
     }
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')
       .delete()
-      .eq('company_id', process.env.COMPANY_ID)
+      .eq('company_id', companyId)
       .eq('vehicle_id', vehicleId)
       .eq('person_id', personId);
     if (error)

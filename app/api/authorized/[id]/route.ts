@@ -26,12 +26,20 @@ export async function PUT(
       );
     }
 
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('authorized')
       .update({ plate, name, department })
       .eq('id', params.id)
-      .eq('company_id', process.env.COMPANY_ID!)
+      .eq('company_id', companyId)
       .select()
       .single();
 
@@ -59,12 +67,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('authorized')
       .delete()
       .eq('id', params.id)
-      .eq('company_id', process.env.COMPANY_ID!);
+      .eq('company_id', companyId);
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
