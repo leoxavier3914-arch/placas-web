@@ -134,6 +134,10 @@ export default function Home() {
     try {
       const res = await fetch(`/api/lookup/plate/${plate}`, { cache: 'no-store' });
       const json = await parseJsonSafe(res);
+      if (json.ok === false) {
+        alert(json.error || 'Erro na verificação da placa.');
+        return;
+      }
       if (json.type === 'registered') {
         const open = (json.visits || []).find((v: any) => !v.checkout_time);
         if (open) {
