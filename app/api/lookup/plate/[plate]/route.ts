@@ -14,20 +14,30 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
     .maybeSingle();
 
   if (vehErr) return NextResponse.json({ ok: false, error: vehErr.message }, { status: 400 });
-  if (!vehicle) return NextResponse.json({ found: false });
+  if (vehicle) {
+    const { data: visits, error: visErr } = await supabaseAdmin
+      .from('visits')
+      .select('id, checkin_time, checkout_time')
+      .eq('company_id', process.env.COMPANY_ID)
+      .eq('branch_id', process.env.DEFAULT_BRANCH_ID)
+      .eq('vehicle_id', vehicle.id)
+      .order('checkin_time', { ascending: false })
+      .limit(20);
 
-  const person = null;
+    if (visErr) return NextResponse.json({ ok: false, error: visErr.message }, { status: 400 });
 
-  const { data: visits, error: visErr } = await supabaseAdmin
-    .from('visits')
-    .select('id, checkin_time, checkout_time')
+    return NextResponse.json({ type: 'registered', vehicle, visits });
+  }
+
+  const { data: auth, error: authErr } = await supabaseAdmin
+    .from('authorized')
+    .select('plate, name, department')
     .eq('company_id', process.env.COMPANY_ID)
-    .eq('branch_id', process.env.DEFAULT_BRANCH_ID)
-    .eq('vehicle_id', vehicle.id)
-    .order('checkin_time', { ascending: false })
-    .limit(20);
+    .eq('plate', plate)
+    .maybeSingle();
 
-  if (visErr) return NextResponse.json({ ok: false, error: visErr.message }, { status: 400 });
+  if (authErr) return NextResponse.json({ ok: false, error: authErr.message }, { status: 400 });
+  if (auth) return NextResponse.json({ type: 'authorized', authorized: auth });
 
-  return NextResponse.json({ found: true, vehicle, person, visits });
+  return NextResponse.json({ type: 'none' });
 }
