@@ -38,7 +38,12 @@ export default function Home() {
 
   // Modal de confirmação para placas cadastradas
   const [confirmVehicle, setConfirmVehicle] = useState<{ id: string; plate: string } | null>(null);
-  const [confirmName, setConfirmName] = useState('');
+  const [confirmPeople, setConfirmPeople] = useState<
+    { id: string; full_name: string | null }[]
+  >([]);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [newPersonName, setNewPersonName] = useState('');
+  const [linking, setLinking] = useState(false);
   const [confirmPurpose, setConfirmPurpose] = useState('despacho');
   const [entering, setEntering] = useState(false);
 
@@ -58,6 +63,61 @@ export default function Home() {
     }
   };
 
+  const onLinkPerson = async () => {
+    if (!confirmVehicle || !newPersonName.trim()) return;
+    setLinking(true);
+    try {
+      const resP = await fetch('/api/people', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: newPersonName.trim() }),
+      });
+      const jsonP = await parseJsonSafe(resP);
+      if (!jsonP.ok) {
+        alert(jsonP.error || 'Falha ao cadastrar pessoa.');
+        return;
+      }
+      const personId = jsonP.data.id;
+      const resL = await fetch('/api/vehicle-people', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId }),
+      });
+      const jsonL = await parseJsonSafe(resL);
+      if (!jsonL.ok) {
+        alert(jsonL.error || 'Falha ao vincular pessoa.');
+        return;
+      }
+      setConfirmPeople((prev) => [...prev, { id: personId, full_name: jsonP.data.full_name }]);
+      setSelectedPersonId(personId);
+      setNewPersonName('');
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const onUnlinkPerson = async (personId: string) => {
+    if (!confirmVehicle) return;
+    try {
+      const res = await fetch('/api/vehicle-people', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId }),
+      });
+      const json = await parseJsonSafe(res);
+      if (!json.ok) {
+        alert(json.error || 'Falha ao desvincular.');
+        return;
+      }
+      setConfirmPeople((prev) => prev.filter((p) => p.id !== personId));
+      if (selectedPersonId === personId) setSelectedPersonId(null);
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    }
+  };
+
   useEffect(() => {
     loadOpenVisits();
   }, []);
@@ -67,6 +127,9 @@ export default function Home() {
     if (!plate) return;
     setShowModal(false);
     setConfirmVehicle(null);
+    setConfirmPeople([]);
+    setSelectedPersonId(null);
+    setNewPersonName('');
     setAuthorizedInfo(null);
     try {
       const res = await fetch(`/api/lookup/plate/${plate}`, { cache: 'no-store' });
@@ -78,7 +141,9 @@ export default function Home() {
           return;
         }
         setConfirmVehicle({ id: json.vehicle.id, plate: json.vehicle.plate });
-        setConfirmName('');
+        setConfirmPeople(json.people || []);
+        setSelectedPersonId(json.people?.[0]?.id || null);
+        setNewPersonName('');
         setConfirmPurpose('despacho');
         return;
       }
@@ -95,28 +160,20 @@ export default function Home() {
 
   const onEntryConfirm = async () => {
     if (!confirmVehicle) return;
+    if (!selectedPersonId) {
+      alert('Selecione ou cadastre uma pessoa vinculada.');
+      return;
+    }
     setEntering(true);
     try {
-      let personId: string | null = null;
-      if (confirmName.trim()) {
-        const resP = await fetch('/api/people', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ full_name: confirmName.trim() }),
-        });
-        const jsonP = await parseJsonSafe(resP);
-        if (!jsonP.ok) {
-          alert(jsonP.error || 'Falha ao cadastrar pessoa.');
-          setEntering(false);
-          return;
-        }
-        personId = jsonP.data.id;
-      }
-
       const resCheck = await fetch('/api/visits/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId, purpose: confirmPurpose }),
+        body: JSON.stringify({
+          vehicleId: confirmVehicle.id,
+          personId: selectedPersonId,
+          purpose: confirmPurpose,
+        }),
       });
       const jsonCheck = await parseJsonSafe(resCheck);
       if (!jsonCheck.ok) {
@@ -124,7 +181,9 @@ export default function Home() {
         return;
       }
       setConfirmVehicle(null);
-      setConfirmName('');
+      setConfirmPeople([]);
+      setSelectedPersonId(null);
+      setNewPersonName('');
       setConfirmPurpose('despacho');
       setInput('');
       await loadOpenVisits();
@@ -161,6 +220,18 @@ export default function Home() {
       if (!jsonV.ok) {
         alert(jsonV.error || 'Falha ao cadastrar veículo.');
         return;
+      }
+      if (personId) {
+        const resLink = await fetch('/api/vehicle-people', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleId: jsonV.data.id, personId }),
+        });
+        const jsonLink = await parseJsonSafe(resLink);
+        if (!jsonLink.ok) {
+          alert(jsonLink.error || 'Falha ao vincular pessoa.');
+          return;
+        }
       }
       const resC = await fetch('/api/visits/checkin', {
         method: 'POST',
@@ -290,12 +361,57 @@ export default function Home() {
                 />
               </div>
               <div>
-                <label className="block text-sm">Nome</label>
-                <input
-                  className="w-full rounded border px-3 py-2"
-                  value={confirmName}
-                  onChange={(e) => setConfirmName(e.target.value)}
-                />
+                <label className="block text-sm">Pessoa vinculada</label>
+                {confirmPeople.length > 0 ? (
+                  <select
+                    className="w-full rounded border px-3 py-2"
+                    value={selectedPersonId ?? ''}
+                    onChange={(e) =>
+                      setSelectedPersonId(e.target.value || null)
+                    }
+                  >
+                    <option value="">Selecione</option>
+                    {confirmPeople.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.full_name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-gray-500">Nenhuma pessoa vinculada.</p>
+                )}
+                {confirmPeople.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {confirmPeople.map((p) => (
+                      <li key={p.id} className="flex justify-between">
+                        <span>{p.full_name}</span>
+                        <button
+                          onClick={() => onUnlinkPerson(p.id)}
+                          className="text-red-600"
+                        >
+                          Desvincular
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm">Adicionar nova pessoa</label>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 rounded border px-3 py-2"
+                    value={newPersonName}
+                    onChange={(e) => setNewPersonName(e.target.value)}
+                  />
+                  <button
+                    onClick={onLinkPerson}
+                    className="rounded bg-blue-600 px-3 py-2 text-white"
+                    disabled={linking}
+                  >
+                    {linking ? 'Vinculando...' : 'Vincular'}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm">Finalidade</label>
@@ -312,7 +428,9 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setConfirmVehicle(null);
-                    setConfirmName('');
+                    setConfirmPeople([]);
+                    setSelectedPersonId(null);
+                    setNewPersonName('');
                     setConfirmPurpose('despacho');
                   }}
                   className="rounded border px-3 py-2"

@@ -26,7 +26,19 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
 
     if (visErr) return NextResponse.json({ ok: false, error: visErr.message }, { status: 400 });
 
-    return NextResponse.json({ type: 'registered', vehicle, visits });
+    const { data: vpeople, error: vpErr } = await supabaseAdmin
+      .from('vehicle_people')
+      .select('people:people (id, full_name)')
+      .eq('company_id', process.env.COMPANY_ID)
+      .eq('vehicle_id', vehicle.id);
+
+    if (vpErr)
+      return NextResponse.json({ ok: false, error: vpErr.message }, { status: 400 });
+
+    const people =
+      vpeople?.map((vp: any) => vp.people).filter((p: any) => p) || [];
+
+    return NextResponse.json({ type: 'registered', vehicle, visits, people });
   }
 
   const { data: auth, error: authErr } = await supabaseAdmin
