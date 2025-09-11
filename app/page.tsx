@@ -18,6 +18,15 @@ async function parseJsonSafe(res: Response) {
   return res.json();
 }
 
+const formatDateTime = (iso: string) =>
+  new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso));
+
 export default function Home() {
   const [input, setInput] = useState('');
   const [openVisits, setOpenVisits] = useState<OpenVisit[]>([]);
@@ -34,7 +43,7 @@ export default function Home() {
     setLoadingVisits(true);
     try {
 
-      const res = await fetch('/api/visits/open');
+      const res = await fetch('/api/visits/open', { cache: 'no-store' });
       const json = await parseJsonSafe(res);
       if (json.ok) setOpenVisits(json.data || []);
     } finally {
@@ -130,19 +139,26 @@ export default function Home() {
 
   const onCheckout = async (visitId: string) => {
     setBusyVisitId(visitId);
+
+    setOpenVisits((prev) => prev.filter((v) => v.id !== visitId));
     try {
-      const res = await fetch(`/api/visits/${visitId}/checkout`, { method: 'POST' });
+      const res = await fetch(`/api/visits/${visitId}/checkout`, {
+        method: 'POST',
+        cache: 'no-store',
+      });
       const json = await parseJsonSafe(res);
       if (!json.ok) {
-        alert(json.error || 'Falha na saída.');
-        return;
+        throw new Error(json.error || 'Falha na saída.');
       }
 
+
       await loadOpenVisits();
+
     } catch (e: any) {
       alert(e?.message ?? e);
     } finally {
       setBusyVisitId(null);
+      await loadOpenVisits();
     }
   };
 
