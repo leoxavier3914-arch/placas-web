@@ -183,23 +183,26 @@ export default function Home() {
   };
 
   return (
-    <div className="flex w-full flex-1 flex-col items-center bg-gray-100">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-gray-100">
+      <div className="mx-auto w-full max-w-3xl space-y-6 p-4">
         <h1 className="text-center text-2xl font-semibold">Controle de Placas</h1>
 
         <div className="space-y-2">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ex: ABC1234"
-            className="w-full rounded border px-3 py-2"
-          />
-          <button
-            onClick={onVerify}
-            className="w-full rounded bg-green-600 py-2 text-white"
-          >
-            Verificar
-          </button>
+          <p className="text-center">Digite a placa para verificar:</p>
+          <div className="flex gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ex: ABC1234"
+              className="flex-1 rounded border px-3 py-2"
+            />
+            <button
+              onClick={onVerify}
+              className="rounded bg-green-600 px-4 py-2 text-white"
+            >
+              Verificar
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">
