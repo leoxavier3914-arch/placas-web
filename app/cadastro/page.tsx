@@ -21,6 +21,7 @@ export default function CadastroPage() {
   const [pPhone, setPPhone] = useState('');
   const [pEmail, setPEmail] = useState('');
   const [pNotes, setPNotes] = useState('');
+  const [pPlate, setPPlate] = useState('');
   const [pLoading, setPLoading] = useState(false);
 
   // Veículo
@@ -55,12 +56,33 @@ export default function CadastroPage() {
   }, []);
 
   const submitPessoa = async () => {
+    const plate = normalizePlate(pPlate);
     if (!pFullName.trim()) {
       alert('Nome completo é obrigatório');
       return;
     }
+    if (!plate) {
+      alert('Placa é obrigatória');
+      return;
+    }
     setPLoading(true);
     try {
+      let vehicle = vehicles.find((v) => v.plate === plate);
+      if (!vehicle) {
+        const resVehicle = await fetch('/api/vehicles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plate }),
+        });
+        const jsonVehicle = (await parseJsonSafe(resVehicle)) as ApiResp<any>;
+        if (!jsonVehicle.ok) {
+          alert(jsonVehicle.error);
+          return;
+        }
+        vehicle = jsonVehicle.data;
+        await loadVehicles();
+      }
+
       const res = await fetch('/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,13 +100,28 @@ export default function CadastroPage() {
         alert(json.error);
         return;
       }
+
+      const person = json.data;
+      const resLink = await fetch('/api/vehicle-people', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId: vehicle.id, personId: person.id }),
+      });
+      const jsonLink = (await parseJsonSafe(resLink)) as ApiResp<any>;
+      if (!jsonLink.ok) {
+        alert(jsonLink.error);
+        return;
+      }
+
       alert('Pessoa cadastrada com sucesso!');
       setPFullName('');
       setPDoc('');
       setPPhone('');
       setPEmail('');
       setPNotes('');
+      setPPlate('');
       await loadPeople();
+      await loadVehicles();
     } catch (e: any) {
       alert(`Falha: ${e?.message ?? e}`);
     } finally {
@@ -152,6 +189,21 @@ export default function CadastroPage() {
               onChange={(e) => setPDoc(e.target.value)}
               placeholder="Ex.: 12345678900"
             />
+          </div>
+          <div>
+            <label className="block text-sm">Placa *</label>
+            <input
+              className="w-full rounded border px-3 py-2"
+              value={pPlate}
+              onChange={(e) => setPPlate(e.target.value.toUpperCase())}
+              list="plates-list"
+              placeholder="Ex.: ABC1D23"
+            />
+            <datalist id="plates-list">
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.plate} />
+              ))}
+            </datalist>
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
