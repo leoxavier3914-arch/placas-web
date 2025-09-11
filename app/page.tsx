@@ -204,7 +204,7 @@ export default function Home() {
       </section>
 
       <section className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-medium">Placas em andamento</h2>
+        <h2 className="text-lg font-medium text-center">Placas em andamento</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full border-collapse text-sm">
             <thead>
