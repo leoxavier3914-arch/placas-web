@@ -33,7 +33,8 @@ export default function Home() {
   const loadOpenVisits = async () => {
     setLoadingVisits(true);
     try {
-      const res = await fetch('/api/visits/open', { cache: 'no-store' });
+
+      const res = await fetch('/api/visits/open');
       const json = await parseJsonSafe(res);
       if (json.ok) setOpenVisits(json.data || []);
     } finally {
@@ -136,7 +137,7 @@ export default function Home() {
         alert(json.error || 'Falha na saída.');
         return;
       }
-      setOpenVisits((prev) => prev.filter((v) => v.id !== visitId));
+
       await loadOpenVisits();
     } catch (e: any) {
       alert(e?.message ?? e);

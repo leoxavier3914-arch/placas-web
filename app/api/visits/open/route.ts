@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export const revalidate = 0;
-
 export async function GET() {
   const companyId = process.env.COMPANY_ID!;
   const branchId = process.env.DEFAULT_BRANCH_ID!;
