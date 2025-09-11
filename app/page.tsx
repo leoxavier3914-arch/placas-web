@@ -42,6 +42,7 @@ export default function Home() {
   const loadOpenVisits = async () => {
     setLoadingVisits(true);
     try {
+
       const res = await fetch('/api/visits/open', { cache: 'no-store' });
       const json = await parseJsonSafe(res);
       if (json.ok) setOpenVisits(json.data || []);
@@ -138,6 +139,7 @@ export default function Home() {
 
   const onCheckout = async (visitId: string) => {
     setBusyVisitId(visitId);
+
     setOpenVisits((prev) => prev.filter((v) => v.id !== visitId));
     try {
       const res = await fetch(`/api/visits/${visitId}/checkout`, {
@@ -148,6 +150,9 @@ export default function Home() {
       if (!json.ok) {
         throw new Error(json.error || 'Falha na saída.');
       }
+
+
+
     } catch (e: any) {
       alert(e?.message ?? e);
     } finally {
@@ -255,6 +260,7 @@ export default function Home() {
           </div>
         )}
       </div>
+
     </div>
   );
 }

@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
+
+=======
+
 
 export async function GET() {
   const companyId = process.env.COMPANY_ID!;
