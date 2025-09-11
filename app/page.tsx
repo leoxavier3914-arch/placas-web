@@ -18,11 +18,8 @@ async function parseJsonSafe(res: Response) {
   return res.json();
 }
 
-const formatDateTime = (iso: string) =>
+const formatTime = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(iso));
@@ -220,7 +217,7 @@ export default function Home() {
                   <tr key={v.id}>
                     <td className="border p-2">{v.vehicles?.plate ?? '-'}</td>
                     <td className="border p-2">{v.people?.full_name ?? '-'}</td>
-                    <td className="border p-2">{formatDateTime(v.checkin_time)}</td>
+                    <td className="border p-2">{formatTime(v.checkin_time)}</td>
                     <td className="border p-2">
                       <button
                         onClick={() => onCheckout(v.id)}
