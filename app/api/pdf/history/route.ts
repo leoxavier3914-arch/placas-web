@@ -34,6 +34,14 @@ type VisitRow = {
  */
 export async function POST(req: Request) {
   try {
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     await ensureExportsBucket(supabaseAdmin);
 
@@ -63,7 +71,7 @@ export async function POST(req: Request) {
         'vehicles(plate, model, color), ' +
         'branches(name)'
       )
-      .eq('company_id', process.env.COMPANY_ID!)
+      .eq('company_id', companyId)
       .eq('branch_id', process.env.DEFAULT_BRANCH_ID!)
       .or(orExpr)
       .order('checkin_time', { ascending: false })

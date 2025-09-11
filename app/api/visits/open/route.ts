@@ -8,8 +8,15 @@ export const revalidate = 0;
 
 
 export async function GET() {
+  const companyId = process.env.COMPANY_ID;
+  if (!companyId) {
+    console.error('COMPANY_ID not configured');
+    return NextResponse.json(
+      { ok: false, error: 'COMPANY_ID not configured' },
+      { status: 500 }
+    );
+  }
   const supabaseAdmin = getSupabaseAdmin();
-  const companyId = process.env.COMPANY_ID!;
   const branchId = process.env.DEFAULT_BRANCH_ID!;
 
   const { data, error } = await supabaseAdmin

@@ -4,12 +4,20 @@ import { normalizePlate } from '@/lib/utils';
 
 export async function GET(_: Request, { params }: { params: { plate: string } }) {
   const plate = normalizePlate(params.plate);
+  const companyId = process.env.COMPANY_ID;
+  if (!companyId) {
+    console.error('COMPANY_ID not configured');
+    return NextResponse.json(
+      { ok: false, error: 'COMPANY_ID not configured' },
+      { status: 500 }
+    );
+  }
 
   const supabaseAdmin = getSupabaseAdmin();
   const { data: vehicle, error: vehErr } = await supabaseAdmin
     .from('vehicles')
     .select('*')
-    .eq('company_id', process.env.COMPANY_ID)
+    .eq('company_id', companyId)
     .eq('plate', plate)
     .maybeSingle();
 
@@ -18,7 +26,7 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
     const { data: visits, error: visErr } = await supabaseAdmin
       .from('visits')
       .select('id, checkin_time, checkout_time')
-      .eq('company_id', process.env.COMPANY_ID)
+      .eq('company_id', companyId)
       .eq('branch_id', process.env.DEFAULT_BRANCH_ID)
       .eq('vehicle_id', vehicle.id)
       .order('checkin_time', { ascending: false })
@@ -29,7 +37,7 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
     const { data: vpeople, error: vpErr } = await supabaseAdmin
       .from('vehicle_people')
       .select('people:people (id, full_name)')
-      .eq('company_id', process.env.COMPANY_ID)
+      .eq('company_id', companyId)
       .eq('vehicle_id', vehicle.id);
 
     if (vpErr)
@@ -44,7 +52,7 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
   const { data: auth, error: authErr } = await supabaseAdmin
     .from('authorized')
     .select('plate, name, department')
-    .eq('company_id', process.env.COMPANY_ID)
+    .eq('company_id', companyId)
     .eq('plate', plate)
     .maybeSingle();
 

@@ -4,11 +4,19 @@ import { normalizePlate } from '@/lib/utils';
 
 export async function GET() {
   try {
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('authorized')
       .select('*')
-      .eq('company_id', process.env.COMPANY_ID!)
+      .eq('company_id', companyId)
       .order('name', { ascending: true });
 
     if (error) {
@@ -48,9 +56,17 @@ export async function POST(req: Request) {
       );
     }
 
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     const insert = {
-      company_id: process.env.COMPANY_ID!,
+      company_id: companyId,
       plate,
       name,
       department,

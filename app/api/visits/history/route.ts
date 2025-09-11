@@ -11,6 +11,14 @@ function toIsoEnd(d: string)   { return new Date(d + 'T23:59:59.999Z').toISOStri
  */
 export async function GET(req: Request) {
   try {
+    const companyId = process.env.COMPANY_ID;
+    if (!companyId) {
+      console.error('COMPANY_ID not configured');
+      return NextResponse.json(
+        { ok: false, error: 'COMPANY_ID not configured' },
+        { status: 500 }
+      );
+    }
     const supabaseAdmin = getSupabaseAdmin();
     const url = new URL(req.url);
     const start = url.searchParams.get('start'); // yyyy-mm-dd
@@ -45,7 +53,7 @@ export async function GET(req: Request) {
         'branches(name)',
         { count: 'exact' }
       )
-      .eq('company_id', process.env.COMPANY_ID!)
+      .eq('company_id', companyId)
       .eq('branch_id', process.env.DEFAULT_BRANCH_ID!)
       .or(orExpr)
       .order('checkin_time', { ascending: false })
