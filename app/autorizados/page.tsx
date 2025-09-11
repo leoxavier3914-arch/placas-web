@@ -40,6 +40,27 @@ export default function AutorizadosPage() {
         alert(json?.error || 'Falha ao salvar.');
         return;
       }
+
+      // link vehicle and person
+      const vehicleId = json.data?.vehicleId;
+      const personId = json.data?.personId;
+      if (vehicleId && personId) {
+        try {
+          const linkRes = await fetch('/api/vehicle-people', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vehicleId, personId }),
+            cache: 'no-store',
+          });
+          const linkJson = await linkRes.json().catch(() => null);
+          if (!linkRes.ok && linkRes.status !== 409) {
+            alert(linkJson?.error || 'Falha ao vincular pessoa e veículo.');
+          }
+        } catch (e: any) {
+          alert(e?.message ?? e);
+        }
+      }
+
       alert(editId ? 'Registro atualizado com sucesso!' : 'Registro salvo com sucesso!');
       setPlate('');
       setName('');
