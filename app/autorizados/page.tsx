@@ -20,10 +20,11 @@ export default function AutorizadosPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plate: p, name: name.trim(), department: department.trim() }),
+        cache: 'no-store',
       });
-      const json = await res.json();
-      if (!json.ok) {
-        alert(json.error || 'Falha ao salvar.');
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        alert(json?.error || 'Falha ao salvar.');
         return;
       }
       alert('Registro salvo com sucesso!');
