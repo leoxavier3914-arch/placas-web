@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-
-export const revalidate = 0;
+// Returns all visits without a checkout time so the homepage
+// can display plates currently in progress.
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 
 export async function GET() {
