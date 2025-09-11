@@ -14,8 +14,8 @@ export default function Nav() {
   ];
 
   return (
-    <nav className="bg-white shadow">
-      <div className="flex w-full flex-wrap items-center justify-center gap-4 px-4 py-3">
+    <nav className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-6 p-4">
         {links.map(({ href, label }) => {
           const active = pathname === href;
           return (
@@ -23,10 +23,8 @@ export default function Nav() {
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`font-medium transition-colors hover:text-blue-800 hover:underline ${
-                active
-                  ? "text-blue-800 underline decoration-2 underline-offset-4"
-                  : "text-blue-600"
+              className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
+                active ? "bg-white/20" : "hover:bg-white/10"
               }`}
             >
               {label}

@@ -183,41 +183,39 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto space-y-6 p-4">
-        <h1 className="text-center text-2xl font-semibold">Controle de Placas</h1>
-
-        <div className="space-y-2">
-          <p className="text-center">Digite a placa para verificar:</p>
-          <div className="flex flex-col gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ex: ABC1234"
-              className="w-full rounded border px-3 py-2"
-            />
-            <button
-              onClick={onVerify}
-              className="w-full rounded bg-green-600 px-4 py-2 text-white"
-            >
-              Verificar
-            </button>
-          </div>
+    <div className="space-y-6">
+      <section className="rounded-lg bg-white p-6 shadow">
+        <h1 className="text-xl font-semibold text-center sm:text-left">Controle de Placas</h1>
+        <p className="mt-2 text-center sm:text-left">Digite a placa para verificar:</p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ex: ABC1234"
+            className="flex-1 rounded border px-3 py-2"
+          />
+          <button
+            onClick={onVerify}
+            className="rounded bg-green-600 px-4 py-2 text-white sm:w-auto"
+          >
+            Verificar
+          </button>
         </div>
+      </section>
 
-        <div className="space-y-2">
-          <h2 className="text-center text-xl font-medium">Placas em andamento</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse bg-white text-sm">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="border p-2 text-left">Placa</th>
-                  <th className="border p-2 text-left">Nome</th>
-                  <th className="border p-2 text-left">Entrada</th>
-                  <th className="border p-2 text-left">Saída</th>
-                </tr>
-              </thead>
-              <tbody>
+      <section className="rounded-lg bg-white p-6 shadow">
+        <h2 className="text-lg font-medium">Placas em andamento</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="border p-2 text-left">Placa</th>
+                <th className="border p-2 text-left">Nome</th>
+                <th className="border p-2 text-left">Entrada</th>
+                <th className="border p-2 text-left">Saída</th>
+              </tr>
+            </thead>
+            <tbody>
                 {openVisits.map((v) => (
                   <tr key={v.id}>
                     <td className="border p-2">{v.vehicles?.plate ?? '-'}</td>
@@ -244,7 +242,7 @@ export default function Home() {
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
         {confirmVehicle && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50">
@@ -336,7 +334,6 @@ export default function Home() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }
