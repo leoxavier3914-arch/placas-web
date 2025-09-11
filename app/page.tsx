@@ -33,6 +33,7 @@ export default function Home() {
   const loadOpenVisits = async () => {
     setLoadingVisits(true);
     try {
+
       const res = await fetch('/api/visits/open');
       const json = await parseJsonSafe(res);
       if (json.ok) setOpenVisits(json.data || []);
@@ -136,6 +137,7 @@ export default function Home() {
         alert(json.error || 'Falha na saída.');
         return;
       }
+
       await loadOpenVisits();
     } catch (e: any) {
       alert(e?.message ?? e);
