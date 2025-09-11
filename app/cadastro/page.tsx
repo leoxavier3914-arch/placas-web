@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { normalizePlate } from '@/lib/utils';
 
 type ApiResp<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -28,6 +28,31 @@ export default function CadastroPage() {
   const [vModel, setVModel] = useState('');
   const [vColor, setVColor] = useState('');
   const [vLoading, setVLoading] = useState(false);
+
+  // listas
+  const [people, setPeople] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+
+  const loadPeople = async () => {
+    try {
+      const res = await fetch('/api/people', { cache: 'no-store' });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.data) setPeople(json.data);
+    } catch {}
+  };
+
+  const loadVehicles = async () => {
+    try {
+      const res = await fetch('/api/vehicles', { cache: 'no-store' });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.data) setVehicles(json.data);
+    } catch {}
+  };
+
+  useEffect(() => {
+    loadPeople();
+    loadVehicles();
+  }, []);
 
   const submitPessoa = async () => {
     if (!pFullName.trim()) {
@@ -59,6 +84,7 @@ export default function CadastroPage() {
       setPPhone('');
       setPEmail('');
       setPNotes('');
+      await loadPeople();
     } catch (e: any) {
       alert(`Falha: ${e?.message ?? e}`);
     } finally {
@@ -93,6 +119,7 @@ export default function CadastroPage() {
       setVPlate('');
       setVModel('');
       setVColor('');
+      await loadVehicles();
     } catch (e: any) {
       alert(`Falha: ${e?.message ?? e}`);
     } finally {
@@ -207,6 +234,44 @@ export default function CadastroPage() {
           >
             {vLoading ? 'Salvando...' : 'Salvar Veículo'}
           </button>
+        </div>
+      </div>
+      {/* Listas de Cadastros */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded border bg-white p-4">
+          <h2 className="mb-3 text-lg font-medium">Pessoas cadastradas</h2>
+          {people.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhuma pessoa cadastrada.</p>
+          ) : (
+            <ul className="divide-y">
+              {people.map((p) => (
+                <li key={p.id} className="py-2 text-sm">
+                  <span className="font-medium">{p.full_name}</span>
+                  {p.doc_number && (
+                    <span className="text-gray-600"> — {p.doc_number}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded border bg-white p-4">
+          <h2 className="mb-3 text-lg font-medium">Veículos cadastrados</h2>
+          {vehicles.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhum veículo cadastrado.</p>
+          ) : (
+            <ul className="divide-y">
+              {vehicles.map((v) => (
+                <li key={v.id} className="py-2 text-sm">
+                  <span className="font-medium">{v.plate}</span>
+                  {v.model && (
+                    <span className="text-gray-600"> — {v.model}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

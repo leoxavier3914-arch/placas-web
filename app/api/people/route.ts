@@ -1,6 +1,27 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
+export async function GET() {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const companyId = process.env.COMPANY_ID!;
+    const { data, error } = await supabaseAdmin
+      .from('people')
+      .select('id, full_name, doc_number, phone, email, notes')
+      .eq('company_id', companyId)
+      .order('full_name');
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ ok: true, data });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: e?.message ?? 'Erro inesperado no servidor.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);

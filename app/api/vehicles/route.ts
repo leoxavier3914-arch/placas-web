@@ -2,6 +2,27 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
 
+export async function GET() {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const companyId = process.env.COMPANY_ID!;
+    const { data, error } = await supabaseAdmin
+      .from('vehicles')
+      .select('id, plate, model, color')
+      .eq('company_id', companyId)
+      .order('plate');
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ ok: true, data });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: e?.message ?? 'Erro inesperado no servidor.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
