@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+
 export async function GET() {
   const companyId = process.env.COMPANY_ID!;
   const branchId = process.env.DEFAULT_BRANCH_ID!;
