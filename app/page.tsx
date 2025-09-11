@@ -38,6 +38,8 @@ export default function Home() {
 
   // Modal de confirmação para placas cadastradas
   const [confirmVehicle, setConfirmVehicle] = useState<{ id: string; plate: string } | null>(null);
+  const [confirmName, setConfirmName] = useState('');
+  const [confirmPurpose, setConfirmPurpose] = useState('despacho');
   const [entering, setEntering] = useState(false);
 
   // Modal para placas apenas autorizadas
@@ -73,6 +75,8 @@ export default function Home() {
           return;
         }
         setConfirmVehicle({ id: json.vehicle.id, plate: json.vehicle.plate });
+        setConfirmName('');
+        setConfirmPurpose('despacho');
         return;
       }
       if (json.type === 'authorized') {
@@ -90,10 +94,26 @@ export default function Home() {
     if (!confirmVehicle) return;
     setEntering(true);
     try {
+      let personId: string | null = null;
+      if (confirmName.trim()) {
+        const resP = await fetch('/api/people', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name: confirmName.trim() }),
+        });
+        const jsonP = await parseJsonSafe(resP);
+        if (!jsonP.ok) {
+          alert(jsonP.error || 'Falha ao cadastrar pessoa.');
+          setEntering(false);
+          return;
+        }
+        personId = jsonP.data.id;
+      }
+
       const resCheck = await fetch('/api/visits/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId: null, purpose: 'despacho' }),
+        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId, purpose: confirmPurpose }),
       });
       const jsonCheck = await parseJsonSafe(resCheck);
       if (!jsonCheck.ok) {
@@ -101,6 +121,8 @@ export default function Home() {
         return;
       }
       setConfirmVehicle(null);
+      setConfirmName('');
+      setConfirmPurpose('despacho');
       setInput('');
       await loadOpenVisits();
     } catch (e: any) {
@@ -244,7 +266,7 @@ export default function Home() {
         {confirmVehicle && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50">
             <div className="w-80 space-y-3 rounded bg-white p-4">
-              <h2 className="text-lg font-medium">Placa Cadastrada</h2>
+              <h2 className="text-lg font-medium text-green-600">CADASTRADO</h2>
               <div>
                 <label className="block text-sm">Placa</label>
                 <input
@@ -253,9 +275,32 @@ export default function Home() {
                   disabled
                 />
               </div>
+              <div>
+                <label className="block text-sm">Nome</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmName}
+                  onChange={(e) => setConfirmName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Finalidade</label>
+                <select
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmPurpose}
+                  onChange={(e) => setConfirmPurpose(e.target.value)}
+                >
+                  <option value="despacho">Despacho</option>
+                  <option value="retirada">Retiro</option>
+                </select>
+              </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button
-                  onClick={() => setConfirmVehicle(null)}
+                  onClick={() => {
+                    setConfirmVehicle(null);
+                    setConfirmName('');
+                    setConfirmPurpose('despacho');
+                  }}
                   className="rounded border px-3 py-2"
                   disabled={entering}
                 >
