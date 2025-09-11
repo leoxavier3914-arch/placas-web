@@ -65,8 +65,11 @@ export default function Home() {
   const onVerify = async () => {
     const plate = normalizePlate(input);
     if (!plate) return;
+    setShowModal(false);
+    setConfirmVehicle(null);
+    setAuthorizedInfo(null);
     try {
-      const res = await fetch(`/api/lookup/plate/${plate}`);
+      const res = await fetch(`/api/lookup/plate/${plate}`, { cache: 'no-store' });
       const json = await parseJsonSafe(res);
       if (json.type === 'registered') {
         const open = (json.visits || []).find((v: any) => !v.checkout_time);
