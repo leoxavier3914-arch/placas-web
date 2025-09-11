@@ -225,43 +225,54 @@ export default function Home() {
       <section>
         <h2 className="text-2xl font-medium text-center">Placas em andamento</h2>
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
+          <table className="min-w-full border-collapse border border-gray-300 text-sm">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border p-2 text-left">Placa</th>
-                <th className="border p-2 text-left">Nome</th>
-                <th className="border p-2 text-left">Entrada</th>
-                <th className="border p-2 text-left">Saída</th>
+                <th className="border border-gray-300 p-2 text-center">Placa</th>
+                <th className="border border-gray-300 p-2 text-center">Nome</th>
+                <th className="border border-gray-300 p-2 text-center">Entrada</th>
+                <th className="border border-gray-300 p-2 text-center">Saída</th>
               </tr>
             </thead>
             <tbody>
-                {openVisits.map((v) => (
-                  <tr key={v.id}>
-                    <td className="border p-2">{v.vehicles?.plate ?? '-'}</td>
-                    <td className="border p-2">{v.people?.full_name ?? '-'}</td>
-                    <td className="border p-2">{formatTime(v.checkin_time)}</td>
-                    <td className="border p-2">
-                      <button
-                        onClick={() => onCheckout(v.id)}
-                        className="rounded bg-red-600 px-3 py-1 text-white"
-                        disabled={busyVisitId === v.id}
-                      >
-                        {busyVisitId === v.id ? 'Saindo...' : 'Saída'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {openVisits.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="border p-2 text-center text-gray-500">
-                      {loadingVisits ? 'Carregando...' : 'Nenhuma placa em andamento.'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+              {openVisits.map((v) => (
+                <tr key={v.id}>
+                  <td className="border border-gray-300 p-2 text-center">
+                    {v.vehicles?.plate ?? '-'}
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center">
+                    {v.people?.full_name ?? '-'}
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center">
+                    {formatTime(v.checkin_time)}
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center">
+                    <button
+                      onClick={() => onCheckout(v.id)}
+                      className="rounded bg-red-600 px-3 py-1 text-white"
+                      disabled={busyVisitId === v.id}
+                    >
+                      {busyVisitId === v.id ? 'Saindo...' : 'Saída'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {openVisits.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="border border-gray-300 p-2 text-center text-gray-500"
+                  >
+                    {loadingVisits
+                      ? 'Carregando...'
+                      : 'Nenhuma placa em andamento.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
         {confirmVehicle && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50">
