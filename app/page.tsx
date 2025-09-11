@@ -42,6 +42,7 @@ export default function Home() {
   const loadOpenVisits = async () => {
     setLoadingVisits(true);
     try {
+
       const res = await fetch('/api/visits/open', { cache: 'no-store' });
       const json = await parseJsonSafe(res);
       if (json.ok) setOpenVisits(json.data || []);
@@ -138,6 +139,7 @@ export default function Home() {
 
   const onCheckout = async (visitId: string) => {
     setBusyVisitId(visitId);
+
     setOpenVisits((prev) => prev.filter((v) => v.id !== visitId));
     try {
       const res = await fetch(`/api/visits/${visitId}/checkout`, {
@@ -148,6 +150,10 @@ export default function Home() {
       if (!json.ok) {
         throw new Error(json.error || 'Falha na saída.');
       }
+
+
+      await loadOpenVisits();
+
     } catch (e: any) {
       alert(e?.message ?? e);
     } finally {
@@ -191,7 +197,7 @@ export default function Home() {
               <tr key={v.id} className="border-b last:border-b-0">
                 <td className="p-1">{v.vehicles?.plate ?? '-'}</td>
                 <td className="p-1">{v.people?.full_name ?? '-'}</td>
-                <td className="p-1">{formatDateTime(v.checkin_time)}</td>
+                <td className="p-1">{new Date(v.checkin_time).toLocaleString()}</td>
                 <td className="p-1">
                   <button
                     onClick={() => onCheckout(v.id)}
