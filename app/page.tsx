@@ -184,7 +184,7 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg bg-white p-6 shadow">
+      <section>
         <h1 className="text-xl font-semibold text-center">Controle de Placas</h1>
         <p className="mt-2 text-center">Digite a placa para verificar:</p>
         <div className="mt-4 flex flex-col items-center gap-2">
@@ -203,7 +203,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="rounded-lg bg-white p-6 shadow">
+      <section>
         <h2 className="text-lg font-medium text-center">Placas em andamento</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full border-collapse text-sm">
