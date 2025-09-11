@@ -37,7 +37,9 @@ export default function Home() {
   const [registering, setRegistering] = useState(false);
 
   // Modal de confirmação para placas cadastradas
-  const [confirmVehicle, setConfirmVehicle] = useState<{ id: string; plate: string } | null>(null);
+  const [confirmVehicle, setConfirmVehicle] = useState<
+    { id: string; plate: string; model: string | null; color: string | null } | null
+  >(null);
   const [confirmPeople, setConfirmPeople] = useState<
     { id: string; full_name: string | null }[]
   >([]);
@@ -144,7 +146,12 @@ export default function Home() {
           alert('Placa já possui entrada em andamento.');
           return;
         }
-        setConfirmVehicle({ id: json.vehicle.id, plate: json.vehicle.plate });
+        setConfirmVehicle({
+          id: json.vehicle.id,
+          plate: json.vehicle.plate,
+          model: json.vehicle.model,
+          color: json.vehicle.color,
+        });
         setConfirmPeople(json.people || []);
         setSelectedPersonId(json.people?.[0]?.id || null);
         setNewPersonName('');
@@ -365,7 +372,23 @@ export default function Home() {
                 />
               </div>
               <div>
-                <label className="block text-sm">Pessoa vinculada</label>
+                <label className="block text-sm">Modelo</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmVehicle.model ?? ''}
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Cor</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmVehicle.color ?? ''}
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Nome</label>
                 {confirmPeople.length > 0 ? (
                   <select
                     className="w-full rounded border px-3 py-2"
