@@ -15,51 +15,19 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
   }
 
   const supabaseAdmin = getSupabaseAdmin();
-  const { data: vehicle, error: vehErr } = await supabaseAdmin
-    .from('vehicles')
-    .select('*')
+  const { data: vpeople, error: vpErr } = await supabaseAdmin
+    .from('vehicle_people')
+    .select('vehicle:vehicles (*), people:people (id, full_name)')
     .eq('company_id', companyId)
-    .eq('plate', plate)
-    .maybeSingle();
-  console.log('vehicle', vehicle);
+    .eq('vehicle.plate', plate);
 
-  if (vehErr) return NextResponse.json({ ok: false, error: vehErr.message }, { status: 400 });
-  if (vehicle) {
-    const { data: visits, error: visErr } = await supabaseAdmin
-      .from('visits')
-      .select('id, checkin_time, checkout_time')
-      .eq('company_id', companyId)
-      .eq('branch_id', process.env.DEFAULT_BRANCH_ID)
-      .eq('vehicle_id', vehicle.id)
-      .order('checkin_time', { ascending: false })
-      .limit(20);
+  if (vpErr) return NextResponse.json({ ok: false, error: vpErr.message }, { status: 400 });
 
-    if (visErr) return NextResponse.json({ ok: false, error: visErr.message }, { status: 400 });
+  if (!vpeople || vpeople.length === 0)
+    return NextResponse.json({ type: 'none' });
 
-    const { data: vpeople, error: vpErr } = await supabaseAdmin
-      .from('vehicle_people')
-      .select('people:people (id, full_name)')
-      .eq('company_id', companyId)
-      .eq('vehicle_id', vehicle.id);
+  const vehicle = vpeople[0].vehicle;
+  const people = vpeople.map((vp: any) => vp.people).filter((p: any) => p);
 
-    if (vpErr)
-      return NextResponse.json({ ok: false, error: vpErr.message }, { status: 400 });
-
-    const people =
-      vpeople?.map((vp: any) => vp.people).filter((p: any) => p) || [];
-
-    return NextResponse.json({ type: 'registered', vehicle, visits, people });
-  }
-
-  const { data: auth, error: authErr } = await supabaseAdmin
-    .from('authorized')
-    .select('plate, name, department')
-    .eq('company_id', companyId)
-    .eq('plate', plate)
-    .maybeSingle();
-
-  if (authErr) return NextResponse.json({ ok: false, error: authErr.message }, { status: 400 });
-  if (auth) return NextResponse.json({ type: 'authorized', authorized: auth });
-
-  return NextResponse.json({ type: 'none' });
+  return NextResponse.json({ type: 'registered', vehicle, people });
 }
