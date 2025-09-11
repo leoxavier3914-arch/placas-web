@@ -39,6 +39,15 @@ export default function Home() {
   const [registerName, setRegisterName] = useState('');
   const [registering, setRegistering] = useState(false);
 
+  // Modal de confirmação para placas cadastradas
+  const [confirmVehicle, setConfirmVehicle] = useState<{ id: string; plate: string } | null>(null);
+  const [entering, setEntering] = useState(false);
+
+  // Modal para placas apenas autorizadas
+  const [authorizedInfo, setAuthorizedInfo] = useState<
+    { plate: string; name: string; department: string } | null
+  >(null);
+
   const loadOpenVisits = async () => {
     setLoadingVisits(true);
     try {
@@ -60,30 +69,47 @@ export default function Home() {
     try {
       const res = await fetch(`/api/lookup/plate/${plate}`);
       const json = await parseJsonSafe(res);
-      if (!json.found) {
-        setPendingPlate(plate);
-        setShowModal(true);
+      if (json.type === 'registered') {
+        const open = (json.visits || []).find((v: any) => !v.checkout_time);
+        if (open) {
+          alert('Placa já possui entrada em andamento.');
+          return;
+        }
+        setConfirmVehicle({ id: json.vehicle.id, plate: json.vehicle.plate });
         return;
       }
-      const open = (json.visits || []).find((v: any) => !v.checkout_time);
-      if (open) {
-        alert('Placa já possui entrada em andamento.');
+      if (json.type === 'authorized') {
+        setAuthorizedInfo(json.authorized);
         return;
       }
+      setPendingPlate(plate);
+      setShowModal(true);
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    }
+  };
+
+  const onEntryConfirm = async () => {
+    if (!confirmVehicle) return;
+    setEntering(true);
+    try {
       const resCheck = await fetch('/api/visits/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId: json.vehicle.id, personId: null, purpose: 'despacho' }),
+        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId: null, purpose: 'despacho' }),
       });
       const jsonCheck = await parseJsonSafe(resCheck);
       if (!jsonCheck.ok) {
         alert(jsonCheck.error || 'Falha na entrada.');
         return;
       }
-      await loadOpenVisits();
+      setConfirmVehicle(null);
       setInput('');
+      await loadOpenVisits();
     } catch (e: any) {
       alert(e?.message ?? e);
+    } finally {
+      setEntering(false);
     }
   };
 
@@ -214,6 +240,57 @@ export default function Home() {
             </tbody>
           </table>
         </div>
+
+        {confirmVehicle && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+            <div className="w-80 space-y-3 rounded bg-white p-4">
+              <h2 className="text-lg font-medium">Placa Cadastrada</h2>
+              <div>
+                <label className="block text-sm">Placa</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmVehicle.plate}
+                  disabled
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setConfirmVehicle(null)}
+                  className="rounded border px-3 py-2"
+                  disabled={entering}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={onEntryConfirm}
+                  className="rounded bg-green-600 px-4 py-2 text-white"
+                  disabled={entering}
+                >
+                  {entering ? 'Entrando...' : 'Entrada'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {authorizedInfo && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+            <div className="w-80 space-y-2 rounded bg-white p-4">
+              <h2 className="text-lg font-medium text-green-600">AUTORIZADO</h2>
+              <p><strong>Placa:</strong> {authorizedInfo.plate}</p>
+              <p><strong>Nome:</strong> {authorizedInfo.name}</p>
+              <p><strong>Departamento:</strong> {authorizedInfo.department}</p>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setAuthorizedInfo(null)}
+                  className="rounded bg-blue-600 px-4 py-2 text-white"
+                >
+                  Ok
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50">
