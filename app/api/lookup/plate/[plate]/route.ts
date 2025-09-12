@@ -24,7 +24,8 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
   // First, try to find a vehicle with the given plate
   const { data: vehicle, error: vehicleErr } = await supabaseAdmin
     .from('vehicles')
-    .select('*')
+    // Only fetch the fields required by the front-end
+    .select('id, plate, model, color')
     .eq('company_id', companyId)
     .eq('plate', plate)
     .maybeSingle();
