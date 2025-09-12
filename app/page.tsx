@@ -25,7 +25,6 @@ export default function CadastroPage() {
 
   // Veículo
   const [vPlate, setVPlate] = useState('');
-  the definition of the function for the following code is as follows
   const [vModel, setVModel] = useState('');
   const [vColor, setVColor] = useState('');
   const [vLoading, setVLoading] = useState(false);
