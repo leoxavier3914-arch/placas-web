@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 
 function toIsoStart(d: string) { return new Date(d + 'T00:00:00.000Z').toISOString(); }
 function toIsoEnd(d: string)   { return new Date(d + 'T23:59:59.999Z').toISOString(); }
@@ -35,7 +35,7 @@ type VisitRow = {
  */
 export async function POST(req: Request) {
   try {
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     await ensureExportsBucket(supabaseAdmin);
 
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         'branches(name)'
       )
       .eq('company_id', companyId)
-      .eq('branch_id', process.env.DEFAULT_BRANCH_ID!)
+      .eq('branch_id', env.DEFAULT_BRANCH_ID)
       .or(orExpr)
       .order('checkin_time', { ascending: false })
       .limit(5000);

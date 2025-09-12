@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 
 // Returns all visits without a checkout time so the homepage
 // can display plates currently in progress.
@@ -9,9 +9,9 @@ export const revalidate = 0;
 
 
 export async function GET() {
-  const companyId = getCompanyId();
+  const companyId = env.COMPANY_ID;
   const supabaseAdmin = getSupabaseAdmin();
-  const branchId = process.env.DEFAULT_BRANCH_ID!;
+  const branchId = env.DEFAULT_BRANCH_ID;
 
   const { data, error } = await supabaseAdmin
     .from('visits')

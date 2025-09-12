@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { personId, vehicleId, purpose } = body;
-    const companyId = getCompanyId();
-    const branchId = process.env.DEFAULT_BRANCH_ID;
-
-    if (!branchId) {
-      return NextResponse.json({ ok: false, error: 'DEFAULT_BRANCH_ID not configured' }, { status: 500 });
-    }
+    const companyId = env.COMPANY_ID;
+    const branchId = env.DEFAULT_BRANCH_ID;
 
     const supabaseAdmin = getSupabaseAdmin();
 
