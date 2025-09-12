@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { normalizePlate } from '@/lib/utils';
+import { normalizePlate, logError } from '@/lib/utils';
 
 type ApiResp<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -47,7 +47,10 @@ export default function CadastroPage() {
       const res = await fetch('/api/people', { cache: 'no-store' });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.data) setPeople(json.data);
-    } catch {}
+    } catch (e) {
+      logError('loadPeople', e);
+      alert('Falha ao carregar pessoas.');
+    }
   };
 
   const loadVehicles = async () => {
@@ -55,7 +58,10 @@ export default function CadastroPage() {
       const res = await fetch('/api/vehicles', { cache: 'no-store' });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.data) setVehicles(json.data);
-    } catch {}
+    } catch (e) {
+      logError('loadVehicles', e);
+      alert('Falha ao carregar veículos.');
+    }
   };
 
   const loadVehiclePeople = async () => {
@@ -70,7 +76,10 @@ export default function CadastroPage() {
         });
         setVehiclePeople(map);
       }
-    } catch {}
+    } catch (e) {
+      logError('loadVehiclePeople', e);
+      alert('Falha ao carregar vínculos de veículos.');
+    }
   };
 
   useEffect(() => {
