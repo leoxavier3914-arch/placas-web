@@ -2,18 +2,9 @@
 import { useState, useEffect } from 'react';
 import { normalizePlate, logError } from '@/lib/utils';
 import { toast } from '@/components/Toast';
+import { parseJsonSafe } from '@/lib/api';
 
 type ApiResp<T> = { ok: true; data: T } | { ok: false; error: string };
-
-async function parseJsonSafe(res: Response) {
-  const ct = res.headers.get('content-type') || '';
-  if (!ct.includes('application/json')) {
-    // tenta ler texto para debugar
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `Servidor retornou ${res.status} sem JSON.`);
-  }
-  return res.json();
-}
 
 export default function CadastroPage() {
   // Pessoa
