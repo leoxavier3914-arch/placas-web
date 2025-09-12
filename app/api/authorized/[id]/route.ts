@@ -3,6 +3,20 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
 import { getCompanyId } from '@/lib/env';
 import { ensurePerson, ensureVehicle } from '@/lib/ensure';
+import { z } from 'zod';
+
+const authorizedSchema = z.object({
+  plate: z
+    .string()
+    .trim()
+    .min(1, 'Placa é obrigatória.')
+    .refine((val) => !!normalizePlate(val), 'Placa inválida.')
+    .transform((val) => normalizePlate(val)!),
+  name: z.string().trim().min(1, 'Nome é obrigatório.'),
+  department: z.string().trim().min(1, 'Departamento é obrigatório.'),
+  model: z.string().trim().nullish(),
+  color: z.string().trim().nullish(),
+});
 
 export async function PUT(
   req: Request,
@@ -17,18 +31,13 @@ export async function PUT(
       );
     }
 
-    const plate = normalizePlate(body?.plate ?? '');
-    const name: string | undefined = body?.name?.trim();
-    const department: string | undefined = body?.department?.trim();
-    const model: string | null = body?.model?.trim() || null;
-    const color: string | null = body?.color?.trim() || null;
-
-    if (!plate || !name || !department) {
-      return NextResponse.json(
-        { ok: false, error: 'Placa, nome e departamento são obrigatórios.' },
-        { status: 400 }
-      );
+    const parsed = authorizedSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map((e) => e.message).join(' ');
+      return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
+
+    const { plate, name, department, model, color } = parsed.data;
 
     const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();

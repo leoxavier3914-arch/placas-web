@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getCompanyId } from '@/lib/env';
+import { z } from 'zod';
+
+const vehiclePeopleSchema = z.object({
+  vehicleId: z.string().trim().min(1, 'vehicleId é obrigatório.'),
+  personId: z.string().trim().min(1, 'personId é obrigatório.'),
+});
 
 export async function GET(req: Request) {
   try {
@@ -40,13 +46,12 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const { vehicleId, personId } = body;
-    if (!vehicleId || !personId) {
-      return NextResponse.json(
-        { ok: false, error: 'vehicleId e personId são obrigatórios.' },
-        { status: 400 }
-      );
+    const parsed = vehiclePeopleSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map((e) => e.message).join(' ');
+      return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
+    const { vehicleId, personId } = parsed.data;
     const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
@@ -81,13 +86,12 @@ export async function DELETE(req: Request) {
         { status: 400 }
       );
     }
-    const { vehicleId, personId } = body;
-    if (!vehicleId || !personId) {
-      return NextResponse.json(
-        { ok: false, error: 'vehicleId e personId são obrigatórios.' },
-        { status: 400 }
-      );
+    const parsed = vehiclePeopleSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map((e) => e.message).join(' ');
+      return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
+    const { vehicleId, personId } = parsed.data;
     const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin

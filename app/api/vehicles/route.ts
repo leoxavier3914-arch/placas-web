@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
 import { getCompanyId } from '@/lib/env';
+import { z } from 'zod';
+
+const vehicleSchema = z.object({
+  plate: z
+    .string()
+    .trim()
+    .min(1, 'Placa é obrigatória.')
+    .refine((val) => !!normalizePlate(val), 'Placa inválida.')
+    .transform((val) => normalizePlate(val)!),
+  model: z.string().trim().nullish(),
+  color: z.string().trim().nullish(),
+});
 
 export async function GET() {
   try {
@@ -34,14 +46,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const plateRaw: string | undefined = body?.plate;
-    const model: string | null = body?.model ?? null;
-    const color: string | null = body?.color ?? null;
-
-    const plate = normalizePlate(plateRaw ?? '');
-    if (!plate) {
-      return NextResponse.json({ ok: false, error: 'Placa inválida.' }, { status: 400 });
+    const parsed = vehicleSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map((e) => e.message).join(' ');
+      return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
+
+    const { plate, model, color } = parsed.data;
 
     const companyId = getCompanyId();
     const insert = {
