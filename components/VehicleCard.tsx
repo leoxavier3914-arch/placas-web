@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { parseJsonSafe } from '@/lib/api';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+import { Person, Vehicle, VehiclePerson } from '@/types';
 
 interface VehicleCardProps {
-  vehicle: any;
-  people: any[];
-  vehiclePeople: any[];
+  vehicle: Vehicle;
+  people: Person[];
+  vehiclePeople: VehiclePerson[];
   onUpdated: () => Promise<void> | void;
 }
 
@@ -27,15 +28,15 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleId: vehicle.id, personId: selection }),
       });
-      const json = await parseJsonSafe(res).catch(() => null);
+      const json = await parseJsonSafe<{ ok?: boolean; error?: string }>(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao vincular.');
         return;
       }
       setSelection('');
       await onUpdated();
-    } catch (e: any) {
-      toast.error(e?.message ?? e);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -47,14 +48,14 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleId: vehicle.id, personId }),
       });
-      const json = await parseJsonSafe(res).catch(() => null);
+      const json = await parseJsonSafe<{ ok?: boolean; error?: string }>(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao desvincular.');
         return;
       }
       await onUpdated();
-    } catch (e: any) {
-      toast.error(e?.message ?? e);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -74,14 +75,14 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plate, model, color }),
       });
-      const json = await parseJsonSafe(res).catch(() => null);
+      const json = await parseJsonSafe<{ ok?: boolean; error?: string }>(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao editar.');
         return;
       }
       await onUpdated();
-    } catch (e: any) {
-      toast.error(e?.message ?? e);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -89,14 +90,14 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
     if (!confirm('Deseja excluir este veículo?')) return;
     try {
       const res = await fetch(`/api/vehicles/${vehicle.id}`, { method: 'DELETE' });
-      const json = await parseJsonSafe(res).catch(() => null);
+      const json = await parseJsonSafe<{ ok?: boolean; error?: string }>(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao excluir.');
         return;
       }
       await onUpdated();
-    } catch (e: any) {
-      toast.error(e?.message ?? e);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -112,7 +113,7 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
           <div>
             {vehiclePeople.length ? (
               <ul className="space-y-1">
-                {vehiclePeople.map((vp: any) => (
+                {vehiclePeople.map((vp) => (
                   <li key={vp.personId} className="flex justify-between text-sm">
                     <span>{vp.person.full_name}</span>
                     <button className="text-red-600" onClick={() => unlinkPerson(vp.personId)}>

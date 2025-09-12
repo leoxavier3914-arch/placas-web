@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import { parseJsonSafe } from '@/lib/api';
+import { Vehicle } from '@/types';
 
 interface Props {
   onSaved: () => Promise<void> | void;
@@ -32,9 +33,9 @@ export default function VehicleForm({ onSaved }: Props) {
           color: color.trim() || null,
         }),
       });
-      const json = await parseJsonSafe(res);
+      const json = await parseJsonSafe<{ ok: boolean; data?: Vehicle; error?: string }>(res);
       if (!json.ok) {
-        toast.error((json as any).error);
+        toast.error(json.error || 'Falha ao cadastrar veículo.');
         return;
       }
       toast.success('Veículo cadastrado com sucesso!');
@@ -42,8 +43,9 @@ export default function VehicleForm({ onSaved }: Props) {
       setModel('');
       setColor('');
       await onSaved();
-    } catch (e: any) {
-      toast.error(`Falha: ${e?.message ?? e}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Falha: ${msg}`);
     } finally {
       setLoading(false);
     }
