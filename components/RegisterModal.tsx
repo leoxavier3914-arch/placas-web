@@ -64,7 +64,7 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
         return;
       }
       setName('');
-      await onSuccess();
+      onSuccess();
     } catch (e: any) {
       toast.error(e?.message ?? e);
     } finally {

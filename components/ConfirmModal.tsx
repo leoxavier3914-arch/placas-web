@@ -108,7 +108,7 @@ export default function ConfirmModal({ vehicle, initialPeople, onClose, onSucces
         toast.error(jsonCheck.error || 'Falha na entrada.');
         return;
       }
-      await onSuccess();
+      onSuccess();
     } catch (e: any) {
       toast.error(e?.message ?? e);
     } finally {
