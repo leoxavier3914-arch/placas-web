@@ -15,7 +15,7 @@ export async function GET() {
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('authorized')
-      .select('*')
+      .select('id, plate, name, department')
       .eq('company_id', companyId)
       .order('name', { ascending: true });
 
@@ -26,7 +26,30 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ ok: true, data });
+    const plates = data.map((a: any) => a.plate);
+    let vehiclesMap = new Map<string, any>();
+    if (plates.length > 0) {
+      const { data: vehicles, error: vehErr } = await supabaseAdmin
+        .from('vehicles')
+        .select('plate, model, color')
+        .eq('company_id', companyId)
+        .in('plate', plates);
+      if (vehErr) {
+        return NextResponse.json(
+          { ok: false, error: vehErr.message },
+          { status: 400 }
+        );
+      }
+      vehiclesMap = new Map(vehicles.map((v: any) => [v.plate, v]));
+    }
+
+    const result = data.map((a: any) => ({
+      ...a,
+      model: vehiclesMap.get(a.plate)?.model ?? null,
+      color: vehiclesMap.get(a.plate)?.color ?? null,
+    }));
+
+    return NextResponse.json({ ok: true, data: result });
   } catch (e: any) {
     return NextResponse.json(
       { ok: false, error: e?.message ?? 'Erro inesperado no servidor.' },
@@ -48,6 +71,8 @@ export async function POST(req: Request) {
     const plate = normalizePlate(body?.plate ?? '');
     const name: string | undefined = body?.name?.trim();
     const department: string | undefined = body?.department?.trim();
+    const model: string | null = body?.model?.trim() || null;
+    const color: string | null = body?.color?.trim() || null;
 
     if (!plate || !name || !department) {
       return NextResponse.json(
@@ -104,10 +129,22 @@ export async function POST(req: Request) {
     }
     if (existingVehicle) {
       vehicleId = existingVehicle.id;
+      if (model || color) {
+        const { error: vehicleUpdErr } = await supabaseAdmin
+          .from('vehicles')
+          .update({ model, color })
+          .eq('id', vehicleId);
+        if (vehicleUpdErr) {
+          return NextResponse.json(
+            { ok: false, error: vehicleUpdErr.message },
+            { status: 400 }
+          );
+        }
+      }
     } else {
       const { data: newVehicle, error: vehicleInsErr } = await supabaseAdmin
         .from('vehicles')
-        .insert({ company_id: companyId, plate })
+        .insert({ company_id: companyId, plate, model, color })
         .select()
         .single();
       if (vehicleInsErr) {
