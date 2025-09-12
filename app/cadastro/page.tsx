@@ -329,12 +329,11 @@ export default function CadastroPage() {
             />
           </div>
         </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="block text-sm">Telefone (opcional)</label>
-            <input
-              className="w-full rounded border px-3 py-2"
- 
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-sm">Telefone (opcional)</label>
+              <input
+                className="w-full rounded border px-3 py-2"
                 value={pPhone}
                 onChange={(e) => setPPhone(e.target.value)}
                 placeholder="Ex.: (11) 90000-0000"
