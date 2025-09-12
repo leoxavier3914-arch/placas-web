@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(_: Request, { params }: { params: { plate: string } }) {
   const plate = normalizePlate(params.plate);
   const companyId = process.env.COMPANY_ID;
