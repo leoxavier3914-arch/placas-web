@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { parseJsonSafe } from '@/lib/api';
-import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
+import EditVehicleModal from './EditVehicleModal';
 
 interface VehicleCardProps {
   vehicle: any;
@@ -15,6 +16,9 @@ interface VehicleCardProps {
 export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated }: VehicleCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [selection, setSelection] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [confirmUnlinkPerson, setConfirmUnlinkPerson] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const linkPerson = async () => {
     if (!selection) {
@@ -40,7 +44,6 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
   };
 
   const unlinkPerson = async (personId: string) => {
-    if (!confirm('Desvincular este condutor?')) return;
     try {
       const res = await fetch('/api/vehicle-people', {
         method: 'DELETE',
@@ -58,35 +61,9 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
     }
   };
 
-  const editVehicle = async () => {
-    const plateInput = prompt('Placa', vehicle.plate);
-    if (!plateInput) return;
-    const plate = normalizePlate(plateInput);
-    if (!plate) {
-      toast.error('Placa inválida');
-      return;
-    }
-    const model = prompt('Modelo', vehicle.model || '') || null;
-    const color = prompt('Cor', vehicle.color || '') || null;
-    try {
-      const res = await fetch(`/api/vehicles/${vehicle.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plate, model, color }),
-      });
-      const json = await parseJsonSafe(res).catch(() => null);
-      if (!res.ok || !json?.ok) {
-        toast.error(json?.error || 'Falha ao editar.');
-        return;
-      }
-      await onUpdated();
-    } catch (e: any) {
-      toast.error(e?.message ?? e);
-    }
-  };
+  const editVehicle = () => setEditOpen(true);
 
   const deleteVehicle = async () => {
-    if (!confirm('Deseja excluir este veículo?')) return;
     try {
       const res = await fetch(`/api/vehicles/${vehicle.id}`, { method: 'DELETE' });
       const json = await parseJsonSafe(res).catch(() => null);
@@ -115,7 +92,10 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
                 {vehiclePeople.map((vp: any) => (
                   <li key={vp.personId} className="flex justify-between text-sm">
                     <span>{vp.person.full_name}</span>
-                    <button className="text-red-600" onClick={() => unlinkPerson(vp.personId)}>
+                    <button
+                      className="text-red-600"
+                      onClick={() => setConfirmUnlinkPerson(vp.personId)}
+                    >
                       Desvincular
                     </button>
                   </li>
@@ -153,13 +133,45 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
               Editar
             </button>
             <button
-              onClick={deleteVehicle}
+              onClick={() => setConfirmDelete(true)}
               className="rounded bg-red-600 px-3 py-1 text-white text-sm"
             >
               Excluir
             </button>
           </div>
         </div>
+      )}
+      {confirmUnlinkPerson && (
+        <ConfirmDeleteModal
+          message="Desvincular este condutor?"
+          confirmText="Desvincular"
+          onCancel={() => setConfirmUnlinkPerson(null)}
+          onConfirm={async () => {
+            await unlinkPerson(confirmUnlinkPerson);
+            setConfirmUnlinkPerson(null);
+          }}
+        />
+      )}
+      {confirmDelete && (
+        <ConfirmDeleteModal
+          message="Deseja excluir este veículo?"
+          confirmText="Excluir"
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={async () => {
+            await deleteVehicle();
+            setConfirmDelete(false);
+          }}
+        />
+      )}
+      {editOpen && (
+        <EditVehicleModal
+          vehicle={vehicle}
+          onClose={() => setEditOpen(false)}
+          onSuccess={async () => {
+            setEditOpen(false);
+            await onUpdated();
+          }}
+        />
       )}
     </div>
   );
