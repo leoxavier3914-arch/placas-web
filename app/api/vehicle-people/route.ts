@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getCompanyId } from '@/lib/env';
 import { z } from 'zod';
+import { parseJsonSafe } from '@/lib/api';
 
 const vehiclePeopleSchema = z.object({
   vehicleId: z.string().trim().min(1, 'vehicleId é obrigatório.'),
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => null);
+    const body = await parseJsonSafe(req).catch(() => null);
     const parsed = vehiclePeopleSchema.safeParse(body);
     if (!parsed.success) {
       const invalid =
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const body = await req.json().catch(() => null);
+    const body = await parseJsonSafe(req).catch(() => null);
     const parsed = vehiclePeopleSchema.safeParse(body);
     if (!parsed.success) {
       const invalid =
