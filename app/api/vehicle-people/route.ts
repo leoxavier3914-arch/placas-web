@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 import { z } from 'zod';
 import { parseJsonSafe } from '@/lib/api';
 
@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('vehicle_people')
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
     const { vehicleId, personId } = parsed.data;
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')
@@ -91,7 +91,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
     const { vehicleId, personId } = parsed.data;
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')

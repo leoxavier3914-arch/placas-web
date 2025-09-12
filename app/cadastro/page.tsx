@@ -7,16 +7,17 @@ import { parseJsonSafe } from '@/lib/api';
 import PersonForm from '@/components/PersonForm';
 import VehicleForm from '@/components/VehicleForm';
 import VehicleCard from '@/components/VehicleCard';
+import { Person, Vehicle, VehiclePerson } from '@/types';
 
 export default function CadastroPage() {
-  const [people, setPeople] = useState<any[]>([]);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [vehiclePeople, setVehiclePeople] = useState<Record<string, any[]>>({});
+  const [people, setPeople] = useState<Person[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehiclePeople, setVehiclePeople] = useState<Record<string, VehiclePerson[]>>({});
 
   const loadPeople = async () => {
     try {
       const res = await fetch('/api/people', { cache: 'no-store' });
-      const json = await parseJsonSafe(res).catch(() => null);
+      const json = await parseJsonSafe<{ data?: Person[] }>(res).catch(() => null);
       if (res.ok && json?.data) setPeople(json.data);
     } catch (e) {
       logError('loadPeople', e);
@@ -27,7 +28,7 @@ export default function CadastroPage() {
   const loadVehicles = async () => {
     try {
       const res = await fetch('/api/vehicles', { cache: 'no-store' });
-      const json = await parseJsonSafe(res).catch(() => null);
+      const json = await parseJsonSafe<{ data?: Vehicle[] }>(res).catch(() => null);
       if (res.ok && json?.data) setVehicles(json.data);
     } catch (e) {
       logError('loadVehicles', e);
@@ -38,10 +39,10 @@ export default function CadastroPage() {
   const loadVehiclePeople = async () => {
     try {
       const res = await fetch('/api/vehicle-people', { cache: 'no-store' });
-      const json = await parseJsonSafe(res).catch(() => null);
+      const json = await parseJsonSafe<{ data?: VehiclePerson[] }>(res).catch(() => null);
       if (res.ok && json?.data) {
-        const map: Record<string, any[]> = {};
-        json.data.forEach((vp: any) => {
+        const map: Record<string, VehiclePerson[]> = {};
+        json.data.forEach((vp) => {
           if (!map[vp.vehicleId]) map[vp.vehicleId] = [];
           map[vp.vehicleId].push(vp);
         });

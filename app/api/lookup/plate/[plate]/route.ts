@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,8 +14,8 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
       { status: 400 }
     );
   }
-  const companyId = getCompanyId();
-  if (process.env.NODE_ENV !== 'production') {
+  const companyId = env.COMPANY_ID;
+  if (env.NODE_ENV !== 'production') {
     console.log('lookup', companyId, plate);
   }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 import { z } from 'zod';
 import { parseJsonSafe } from '@/lib/api';
 
@@ -34,7 +34,7 @@ export async function PUT(
     }
     const { plate, model, color } = parsed.data;
 
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('vehicles')
@@ -64,7 +64,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicles')
