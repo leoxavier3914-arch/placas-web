@@ -18,6 +18,8 @@ export async function PUT(
     const plate = normalizePlate(body?.plate ?? '');
     const name: string | undefined = body?.name?.trim();
     const department: string | undefined = body?.department?.trim();
+    const model: string | null = body?.model?.trim() || null;
+    const color: string | null = body?.color?.trim() || null;
 
     if (!plate || !name || !department) {
       return NextResponse.json(
@@ -74,10 +76,22 @@ export async function PUT(
     }
     if (existingVehicle) {
       vehicleId = existingVehicle.id;
+      if (model || color) {
+        const { error: vehicleUpdErr } = await supabaseAdmin
+          .from('vehicles')
+          .update({ model, color })
+          .eq('id', vehicleId);
+        if (vehicleUpdErr) {
+          return NextResponse.json(
+            { ok: false, error: vehicleUpdErr.message },
+            { status: 400 }
+          );
+        }
+      }
     } else {
       const { data: newVehicle, error: vehicleInsErr } = await supabaseAdmin
         .from('vehicles')
-        .insert({ company_id: companyId, plate })
+        .insert({ company_id: companyId, plate, model, color })
         .select()
         .single();
       if (vehicleInsErr) {
