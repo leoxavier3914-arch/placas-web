@@ -9,7 +9,9 @@ export const revalidate = 0;
 export async function GET(_: Request, { params }: { params: { plate: string } }) {
   const plate = normalizePlate(params.plate);
   const companyId = getCompanyId();
-  console.log('lookup', companyId, plate);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('lookup', companyId, plate);
+  }
 
   const supabaseAdmin = getSupabaseAdmin();
 
