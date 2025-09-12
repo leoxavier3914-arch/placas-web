@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import { parseJsonSafe } from '@/lib/api';
+import { Person, Vehicle } from '@/types';
 
 interface Props {
-  vehicles: any[];
+  vehicles: Vehicle[];
   onSaved: () => Promise<void> | void;
 }
 
@@ -44,9 +45,13 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
             color: color.trim() || null,
           }),
         });
-        const jsonVehicle = await parseJsonSafe(resVehicle);
+        const jsonVehicle = await parseJsonSafe<{
+          ok: boolean;
+          data: Vehicle;
+          error?: string;
+        }>(resVehicle);
         if (!jsonVehicle.ok) {
-          toast.error((jsonVehicle as any).error);
+          toast.error(jsonVehicle.error || 'Falha ao cadastrar veículo.');
           return;
         }
         vehicle = jsonVehicle.data;
@@ -64,9 +69,13 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
           notes: notes.trim() || null,
         }),
       });
-      const json = await parseJsonSafe(res);
+      const json = await parseJsonSafe<{
+        ok: boolean;
+        data: Person;
+        error?: string;
+      }>(res);
       if (!json.ok) {
-        toast.error((json as any).error);
+        toast.error(json.error || 'Falha ao cadastrar pessoa.');
         return;
       }
       toast.success('Pessoa cadastrada com sucesso!');
@@ -79,8 +88,9 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
       setModel('');
       setColor('');
       await onSaved();
-    } catch (e: any) {
-      toast.error(`Falha: ${e?.message ?? e}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Falha: ${msg}`);
     } finally {
       setLoading(false);
     }
