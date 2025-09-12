@@ -24,16 +24,14 @@ export async function PUT(
 ) {
   try {
     const body = await req.json().catch(() => null);
-    if (!body) {
-      return NextResponse.json(
-        { ok: false, error: 'Requisição inválida (corpo ausente ou inválido).' },
-        { status: 400 }
-      );
-    }
-
     const parsed = authorizedSchema.safeParse(body);
     if (!parsed.success) {
-      const msg = parsed.error.errors.map((e) => e.message).join(' ');
+      const invalid =
+        parsed.error.errors.length === 1 &&
+        parsed.error.errors[0].path.length === 0;
+      const msg = invalid
+        ? 'Requisição inválida (corpo ausente ou inválido).'
+        : parsed.error.errors.map((e) => e.message).join(' ');
       return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
 
