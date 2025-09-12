@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+ 
 import { getCompanyId } from '@/lib/env';
 import { getValidationErrorMsg } from '@/lib/validation';
+
+import env from '@/lib/env';
+ 
 import { z } from 'zod';
+import { parseJsonSafe } from '@/lib/api';
 
 const vehiclePeopleSchema = z.object({
   vehicleId: z.string().trim().min(1, 'vehicleId é obrigatório.'),
@@ -13,7 +18,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('vehicle_people')
@@ -40,7 +45,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => null);
+    const body = await parseJsonSafe(req).catch(() => null);
     const parsed = vehiclePeopleSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
       );
     }
     const { vehicleId, personId } = parsed.data;
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')
@@ -76,7 +81,7 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const body = await req.json().catch(() => null);
+    const body = await parseJsonSafe(req).catch(() => null);
     const parsed = vehiclePeopleSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -85,7 +90,7 @@ export async function DELETE(req: Request) {
       );
     }
     const { vehicleId, personId } = parsed.data;
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')

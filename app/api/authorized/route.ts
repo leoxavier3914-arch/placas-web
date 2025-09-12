@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 import { ensurePerson, ensureVehicle } from '@/lib/ensure';
 import { getValidationErrorMsg } from '@/lib/validation';
 import { z } from 'zod';
+import { parseJsonSafe } from '@/lib/api';
 
 const authorizedSchema = z.object({
   plate: z
@@ -21,7 +22,7 @@ const authorizedSchema = z.object({
 
 export async function GET() {
   try {
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('authorized')
@@ -70,7 +71,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => null);
+    const body = await parseJsonSafe(req).catch(() => null);
     const parsed = authorizedSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
 
     const { plate, name, department, model, color } = parsed.data;
 
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
 
     let personId: string;

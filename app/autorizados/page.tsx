@@ -2,6 +2,11 @@
 import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+ 
+import { parseJsonSafe } from '@/lib/api';
+
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+ 
 
 export default function AutorizadosPage() {
   const [plate, setPlate] = useState('');
@@ -12,10 +17,11 @@ export default function AutorizadosPage() {
   const [loading, setLoading] = useState(false);
   const [authorized, setAuthorized] = useState<any[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const fetchAuthorized = async () => {
     const res = await fetch('/api/authorized', { cache: 'no-store' });
-    const json = await res.json().catch(() => null);
+    const json = await parseJsonSafe(res).catch(() => null);
     if (res.ok && json?.data) setAuthorized(json.data);
     else toast.error(json?.error || 'Falha ao carregar lista.');
   };
@@ -44,7 +50,7 @@ export default function AutorizadosPage() {
         }),
         cache: 'no-store',
       });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao salvar.');
         return;
@@ -75,13 +81,12 @@ export default function AutorizadosPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm('Deseja excluir este registro?')) return;
     try {
       const res = await fetch(`/api/authorized/${id}`, {
         method: 'DELETE',
         cache: 'no-store',
       });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao excluir.');
         return;
@@ -187,7 +192,7 @@ export default function AutorizadosPage() {
                     Editar
                   </button>
                   <button
-                    onClick={() => remove(a.id)}
+                    onClick={() => setConfirmId(a.id)}
                     className="rounded bg-red-600 px-3 py-1 text-white text-sm"
                   >
                     Excluir
@@ -198,6 +203,17 @@ export default function AutorizadosPage() {
           </ul>
         )}
       </div>
+      {confirmId && (
+        <ConfirmDeleteModal
+          message="Deseja excluir este registro?"
+          confirmText="Excluir"
+          onCancel={() => setConfirmId(null)}
+          onConfirm={async () => {
+            await remove(confirmId);
+            setConfirmId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
