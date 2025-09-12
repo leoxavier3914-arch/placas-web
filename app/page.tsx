@@ -15,6 +15,7 @@ export default function Home() {
   const [busyVisitId, setBusyVisitId] = useState<string | null>(null);
   // Modal de cadastro
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
+  const [verificando, setVerificando] = useState(false);
 
   // Modal de confirmação para placas cadastradas
   const [confirmVehicle, setConfirmVehicle] = useState<
@@ -47,6 +48,7 @@ export default function Home() {
   const onVerify = async () => {
     const plate = normalizePlate(input);
     if (!plate) return;
+    setVerificando(true);
     setPendingPlate(null);
     setConfirmVehicle(null);
     setConfirmPeople([]);
@@ -82,6 +84,8 @@ export default function Home() {
       setPendingPlate(plate);
     } catch (e: any) {
       toast.error(e?.message ?? e);
+    } finally {
+      setVerificando(false);
     }
   };
 
@@ -119,9 +123,10 @@ export default function Home() {
           />
           <button
             onClick={onVerify}
-            className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white"
+            disabled={verificando}
+            className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50"
           >
-            Verificar
+            {verificando ? 'Verificando…' : 'Verificar'}
           </button>
         </div>
       </section>
