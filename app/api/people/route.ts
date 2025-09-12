@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import env from '@/lib/env';
 import { z } from 'zod';
+import { parseJsonSafe } from '@/lib/api';
 
 const personSchema = z.object({
   full_name: z.string().trim().min(1, 'Nome completo é obrigatório.'),
@@ -34,7 +35,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => null);
+    const body = await parseJsonSafe(req).catch(() => null);
     const parsed = personSchema.safeParse(body);
     if (!parsed.success) {
       const invalid =

@@ -4,6 +4,7 @@ import { normalizePlate } from '@/lib/utils';
 import env from '@/lib/env';
 import { ensurePerson, ensureVehicle } from '@/lib/ensure';
 import { z } from 'zod';
+import { parseJsonSafe } from '@/lib/api';
 
 const authorizedSchema = z.object({
   plate: z
@@ -69,7 +70,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => null);
+    const body = await parseJsonSafe(req).catch(() => null);
     const parsed = authorizedSchema.safeParse(body);
     if (!parsed.success) {
       const invalid =

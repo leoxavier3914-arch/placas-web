@@ -2,7 +2,11 @@
 import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+ 
+import { parseJsonSafe } from '@/lib/api';
+
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+ 
 
 export default function AutorizadosPage() {
   const [plate, setPlate] = useState('');
@@ -17,7 +21,7 @@ export default function AutorizadosPage() {
 
   const fetchAuthorized = async () => {
     const res = await fetch('/api/authorized', { cache: 'no-store' });
-    const json = await res.json().catch(() => null);
+    const json = await parseJsonSafe(res).catch(() => null);
     if (res.ok && json?.data) setAuthorized(json.data);
     else toast.error(json?.error || 'Falha ao carregar lista.');
   };
@@ -46,7 +50,7 @@ export default function AutorizadosPage() {
         }),
         cache: 'no-store',
       });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao salvar.');
         return;
@@ -82,7 +86,7 @@ export default function AutorizadosPage() {
         method: 'DELETE',
         cache: 'no-store',
       });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao excluir.');
         return;
