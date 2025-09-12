@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getCompanyId } from '@/lib/env';
 
 function toIsoStart(d: string) { return new Date(d + 'T00:00:00.000Z').toISOString(); }
 function toIsoEnd(d: string)   { return new Date(d + 'T23:59:59.999Z').toISOString(); }
@@ -34,14 +35,7 @@ type VisitRow = {
  */
 export async function POST(req: Request) {
   try {
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     await ensureExportsBucket(supabaseAdmin);
 

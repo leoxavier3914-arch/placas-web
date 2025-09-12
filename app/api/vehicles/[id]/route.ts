@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
+import { getCompanyId } from '@/lib/env';
 
 export async function PUT(
   req: Request,
@@ -21,14 +22,7 @@ export async function PUT(
     if (!plate) {
       return NextResponse.json({ ok: false, error: 'Placa inválida.' }, { status: 400 });
     }
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('vehicles')
@@ -58,14 +52,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicles')
