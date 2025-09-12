@@ -13,7 +13,6 @@ export default function Home() {
   const [openVisits, setOpenVisits] = useState<OpenVisit[]>([]);
   const [loadingVisits, setLoadingVisits] = useState(false);
   const [busyVisitId, setBusyVisitId] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
   // Modal de cadastro
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [verificando, setVerificando] = useState(false);
@@ -56,7 +55,6 @@ export default function Home() {
     setConfirmVehicle(null);
     setConfirmPeople([]);
     setAuthorizedInfo(null);
-    setChecking(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
@@ -100,8 +98,7 @@ export default function Home() {
         toast.error(e?.message ?? e);
       }
     } finally {
-      setChecking(false);
-
+      setVerificando(false);
     }
   };
 
