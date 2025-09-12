@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from '@/components/Toast';
+import { parseJsonSafe } from '@/lib/api';
 
 type OpenVisit = {
   id: string;
@@ -9,15 +10,6 @@ type OpenVisit = {
   people: { full_name: string | null } | null;
   vehicles: { plate: string | null } | null;
 };
-
-async function parseJsonSafe(res: Response) {
-  const ct = res.headers.get('content-type') || '';
-  if (!ct.includes('application/json')) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `Servidor retornou ${res.status} sem JSON.`);
-  }
-  return res.json();
-}
 
 const formatTime = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', {

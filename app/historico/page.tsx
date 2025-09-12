@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { parseJsonSafe } from '@/lib/api';
 
 type Item = {
   id: string;
@@ -20,15 +21,6 @@ type ApiResp = {
   total?: number;
   totalPages?: number;
 };
-
-async function parseJsonSafe(res: Response) {
-  const ct = res.headers.get('content-type') || '';
-  if (!ct.includes('application/json')) {
-    const t = await res.text().catch(() => '');
-    throw new Error(t || `Servidor retornou ${res.status} sem JSON.`);
-  }
-  return res.json();
-}
 
 export default function HistoricoPage() {
   // filtros
