@@ -17,7 +17,7 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
   const supabaseAdmin = getSupabaseAdmin();
   const { data: vpeople, error: vpErr } = await supabaseAdmin
     .from('vehicle_people')
-    .select('vehicle:vehicles (*), people:people (id, full_name)')
+    .select('vehicle:vehicles!inner (*), people:people (id, full_name)')
     .eq('company_id', companyId)
     .eq('vehicle.plate', plate);
 
@@ -26,7 +26,9 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
   if (!vpeople || vpeople.length === 0)
     return NextResponse.json({ type: 'none' });
 
-  const vehicle = vpeople[0].vehicle;
+  const vehicle = vpeople[0]?.vehicle;
+  if (!vehicle) return NextResponse.json({ type: 'none' });
+
   const people = vpeople.map((vp: any) => vp.people).filter((p: any) => p);
 
   return NextResponse.json({ type: 'registered', vehicle, people });
