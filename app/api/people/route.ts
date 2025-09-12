@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { getCompanyId } from '@/lib/env';
 
 export async function GET() {
   try {
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('people')
@@ -49,14 +43,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Nome completo é obrigatório.' }, { status: 400 });
     }
 
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const insert = {
       company_id: companyId,
       full_name,

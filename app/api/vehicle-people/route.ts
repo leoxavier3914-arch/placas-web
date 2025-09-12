@@ -1,18 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { getCompanyId } from '@/lib/env';
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('vehicle_people')
@@ -53,14 +47,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')
@@ -101,14 +88,7 @@ export async function DELETE(req: Request) {
         { status: 400 }
       );
     }
-    const companyId = process.env.COMPANY_ID;
-    if (!companyId) {
-      console.error('COMPANY_ID not configured');
-      return NextResponse.json(
-        { ok: false, error: 'COMPANY_ID not configured' },
-        { status: 500 }
-      );
-    }
+    const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('vehicle_people')
