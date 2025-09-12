@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
+import { toast } from '@/components/Toast';
 
 export default function AutorizadosPage() {
   const [plate, setPlate] = useState('');
@@ -16,7 +17,7 @@ export default function AutorizadosPage() {
     const res = await fetch('/api/authorized', { cache: 'no-store' });
     const json = await res.json().catch(() => null);
     if (res.ok && json?.data) setAuthorized(json.data);
-    else alert(json?.error || 'Falha ao carregar lista.');
+    else toast.error(json?.error || 'Falha ao carregar lista.');
   };
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function AutorizadosPage() {
   const submit = async () => {
     const p = normalizePlate(plate);
     if (!p || !name.trim() || !department.trim()) {
-      alert('Preencha placa, nome e departamento.');
+      toast.error('Preencha placa, nome e departamento.');
       return;
     }
     setLoading(true);
@@ -45,11 +46,11 @@ export default function AutorizadosPage() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao salvar.');
+        toast.error(json?.error || 'Falha ao salvar.');
         return;
       }
 
-      alert(editId ? 'Registro atualizado com sucesso!' : 'Registro salvo com sucesso!');
+      toast.success(editId ? 'Registro atualizado com sucesso!' : 'Registro salvo com sucesso!');
       setPlate('');
       setName('');
       setDepartment('');
@@ -58,7 +59,7 @@ export default function AutorizadosPage() {
       setEditId(null);
       fetchAuthorized();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     } finally {
       setLoading(false);
     }
@@ -82,12 +83,12 @@ export default function AutorizadosPage() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao excluir.');
+        toast.error(json?.error || 'Falha ao excluir.');
         return;
       }
       fetchAuthorized();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     }
   };
 

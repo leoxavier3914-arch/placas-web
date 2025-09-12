@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
+import { toast } from '@/components/Toast';
 
 type OpenVisit = {
   id: string;
@@ -76,7 +77,7 @@ export default function Home() {
       });
       const jsonP = await parseJsonSafe(resP);
       if (!jsonP.ok) {
-        alert(jsonP.error || 'Falha ao cadastrar pessoa.');
+        toast.error(jsonP.error || 'Falha ao cadastrar pessoa.');
         return;
       }
       const personId = jsonP.data.id;
@@ -87,14 +88,14 @@ export default function Home() {
       });
       const jsonL = await parseJsonSafe(resL);
       if (!jsonL.ok) {
-        alert(jsonL.error || 'Falha ao vincular pessoa.');
+        toast.error(jsonL.error || 'Falha ao vincular pessoa.');
         return;
       }
       setConfirmPeople((prev) => [...prev, { id: personId, full_name: jsonP.data.full_name }]);
       setSelectedPersonId(personId);
       setNewPersonName('');
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     } finally {
       setLinking(false);
     }
@@ -110,13 +111,13 @@ export default function Home() {
       });
       const json = await parseJsonSafe(res);
       if (!json.ok) {
-        alert(json.error || 'Falha ao desvincular.');
+        toast.error(json.error || 'Falha ao desvincular.');
         return;
       }
       setConfirmPeople((prev) => prev.filter((p) => p.id !== personId));
       if (selectedPersonId === personId) setSelectedPersonId(null);
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     }
   };
 
@@ -137,13 +138,13 @@ export default function Home() {
       const res = await fetch(`/api/lookup/plate/${plate}`, { cache: 'no-store' });
       const json = await parseJsonSafe(res);
       if (json.ok === false) {
-        alert(json.error || 'Erro na verificação da placa.');
+        toast.error(json.error || 'Erro na verificação da placa.');
         return;
       }
       if (json.type === 'registered') {
         const open = (json.visits || []).find((v: any) => !v.checkout_time);
         if (open) {
-          alert('Placa já possui entrada em andamento.');
+          toast.error('Placa já possui entrada em andamento.');
           return;
         }
         if (json.vehicle && typeof json.vehicle === 'object') {
@@ -167,14 +168,14 @@ export default function Home() {
       setPendingPlate(plate);
       setShowModal(true);
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     }
   };
 
   const onEntryConfirm = async () => {
     if (!confirmVehicle) return;
     if (!selectedPersonId) {
-      alert('Selecione ou cadastre uma pessoa vinculada.');
+      toast.error('Selecione ou cadastre uma pessoa vinculada.');
       return;
     }
     setEntering(true);
@@ -190,7 +191,7 @@ export default function Home() {
       });
       const jsonCheck = await parseJsonSafe(resCheck);
       if (!jsonCheck.ok) {
-        alert(jsonCheck.error || 'Falha na entrada.');
+        toast.error(jsonCheck.error || 'Falha na entrada.');
         return;
       }
       setConfirmVehicle(null);
@@ -201,7 +202,7 @@ export default function Home() {
       setInput('');
       await loadOpenVisits();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     } finally {
       setEntering(false);
     }
@@ -219,7 +220,7 @@ export default function Home() {
         });
         const jsonP = await parseJsonSafe(resP);
         if (!jsonP.ok) {
-          alert(jsonP.error || 'Falha ao cadastrar pessoa.');
+          toast.error(jsonP.error || 'Falha ao cadastrar pessoa.');
           return;
         }
         personId = jsonP.data.id;
@@ -231,7 +232,7 @@ export default function Home() {
       });
       const jsonV = await parseJsonSafe(resV);
       if (!jsonV.ok) {
-        alert(jsonV.error || 'Falha ao cadastrar veículo.');
+        toast.error(jsonV.error || 'Falha ao cadastrar veículo.');
         return;
       }
       if (personId) {
@@ -242,7 +243,7 @@ export default function Home() {
         });
         const jsonLink = await parseJsonSafe(resLink);
         if (!jsonLink.ok) {
-          alert(jsonLink.error || 'Falha ao vincular pessoa.');
+          toast.error(jsonLink.error || 'Falha ao vincular pessoa.');
           return;
         }
       }
@@ -253,7 +254,7 @@ export default function Home() {
       });
       const jsonC = await parseJsonSafe(resC);
       if (!jsonC.ok) {
-        alert(jsonC.error || 'Falha na entrada.');
+        toast.error(jsonC.error || 'Falha na entrada.');
         return;
       }
       setShowModal(false);
@@ -262,7 +263,7 @@ export default function Home() {
       setInput('');
       await loadOpenVisits();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     } finally {
       setRegistering(false);
     }
@@ -281,7 +282,7 @@ export default function Home() {
         throw new Error(json.error || 'Falha na saída.');
       }
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     } finally {
       setBusyVisitId(null);
       await loadOpenVisits();
