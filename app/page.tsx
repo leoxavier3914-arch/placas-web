@@ -13,6 +13,7 @@ export default function Home() {
   const [openVisits, setOpenVisits] = useState<OpenVisit[]>([]);
   const [loadingVisits, setLoadingVisits] = useState(false);
   const [busyVisitId, setBusyVisitId] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   // Modal de cadastro
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [verificando, setVerificando] = useState(false);
@@ -47,14 +48,23 @@ export default function Home() {
 
   const onVerify = async () => {
     const plate = normalizePlate(input);
+
     if (!plate) return;
     setVerificando(true);
+ 
     setPendingPlate(null);
     setConfirmVehicle(null);
     setConfirmPeople([]);
     setAuthorizedInfo(null);
+    setChecking(true);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     try {
-      const res = await fetch(`/api/lookup/plate/${plate}`, { cache: 'no-store' });
+      const res = await fetch(`/api/lookup/plate/${plate}`, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       const json = await parseJsonSafe(res);
       if (json.ok === false) {
         toast.error(json.error || 'Erro na verificação da placa.');
@@ -83,9 +93,15 @@ export default function Home() {
       }
       setPendingPlate(plate);
     } catch (e: any) {
-      toast.error(e?.message ?? e);
+ 
+      if (e.name === 'AbortError') {
+        toast.error('Tempo de consulta esgotado. Tente novamente.');
+      } else {
+        toast.error(e?.message ?? e);
+      }
     } finally {
-      setVerificando(false);
+      setChecking(false);
+
     }
   };
 
@@ -123,10 +139,14 @@ export default function Home() {
           />
           <button
             onClick={onVerify}
+ 
+            }
+           
             disabled={verificando}
             className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50"
           >
             {verificando ? 'Verificando…' : 'Verificar'}
+ 
           </button>
         </div>
       </section>
