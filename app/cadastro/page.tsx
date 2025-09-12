@@ -79,14 +79,19 @@ export default function CadastroPage() {
     loadVehiclePeople();
   }, []);
 
-  const submitPessoa = async () => {
-    if (!pFullName.trim()) {
-      alert('Nome completo é obrigatório');
-      return;
-    }
-    setPLoading(true);
-    try {
-      let vehicle = vehicles.find((v) => v.plate === plate);
+    const submitPessoa = async () => {
+      if (!pFullName.trim()) {
+        alert('Nome completo é obrigatório');
+        return;
+      }
+      const plate = normalizePlate(pPlate);
+      if (!plate) {
+        alert('Informe a placa (ex.: ABC1D23)');
+        return;
+      }
+      setPLoading(true);
+      try {
+        let vehicle = vehicles.find((v) => v.plate === plate);
       if (!vehicle) {
         const resVehicle = await fetch('/api/vehicles', {
           method: 'POST',
@@ -99,7 +104,7 @@ export default function CadastroPage() {
         });
         const jsonVehicle = (await parseJsonSafe(resVehicle)) as ApiResp<any>;
         if (!jsonVehicle.ok) {
-          alert(jsonVehicle.error);
+          alert((jsonVehicle as { ok: false; error: string }).error);
           return;
         }
         vehicle = jsonVehicle.data;
@@ -517,14 +522,7 @@ export default function CadastroPage() {
                       </div>
                     </div>
                   )}
- 
-                
-
-                  {v.color && (
-                    <span className="text-gray-600"> ({v.color})</span>
-                  )}
-                </li>
- 
+                </div>
               ))}
             </div>
           )}
