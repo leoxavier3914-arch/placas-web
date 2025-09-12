@@ -15,21 +15,50 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
   }
 
   const supabaseAdmin = getSupabaseAdmin();
-  const { data: vpeople, error: vpErr } = await supabaseAdmin
-    .from('vehicle_people')
-    .select('vehicle:vehicles!inner (*), people:people (id, full_name)')
+
+  // First, try to find a vehicle with the given plate
+  const { data: vehicle, error: vehicleErr } = await supabaseAdmin
+    .from('vehicles')
+    .select('*')
     .eq('company_id', companyId)
-    .eq('vehicle.plate', plate);
+    .eq('plate', plate)
+    .maybeSingle();
 
-  if (vpErr) return NextResponse.json({ ok: false, error: vpErr.message }, { status: 400 });
+  if (vehicleErr)
+    return NextResponse.json({ ok: false, error: vehicleErr.message }, { status: 400 });
 
-  if (!vpeople || vpeople.length === 0)
-    return NextResponse.json({ type: 'none' });
+  if (vehicle) {
+    // Fetch all people linked to this vehicle (if any)
+    const { data: vpList, error: vpErr } = await supabaseAdmin
+      .from('vehicle_people')
+      .select('people:people (id, full_name)')
+      .eq('company_id', companyId)
+      .eq('vehicle_id', vehicle.id);
 
-  const vehicle = vpeople[0]?.vehicle;
-  if (!vehicle) return NextResponse.json({ type: 'none' });
+    if (vpErr)
+      return NextResponse.json({ ok: false, error: vpErr.message }, { status: 400 });
 
-  const people = vpeople.map((vp: any) => vp.people).filter((p: any) => p);
+    const people =
+      vpList?.map((vp: any) => vp.people).filter((p: any) => p) || [];
 
-  return NextResponse.json({ type: 'registered', vehicle, people });
+    return NextResponse.json({ type: 'registered', vehicle, people });
+  }
+
+  // Not registered: check if the plate is authorized
+  const { data: authorized, error: authErr } = await supabaseAdmin
+    .from('authorized')
+    .select('plate, name, department')
+    .eq('company_id', companyId)
+    .eq('plate', plate)
+    .maybeSingle();
+
+  if (authErr)
+    return NextResponse.json({ ok: false, error: authErr.message }, { status: 400 });
+
+  if (authorized) {
+    return NextResponse.json({ type: 'authorized', authorized });
+  }
+
+  // Plate not found anywhere
+  return NextResponse.json({ type: 'none' });
 }
