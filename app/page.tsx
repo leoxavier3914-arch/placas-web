@@ -146,17 +146,19 @@ export default function Home() {
           alert('Placa já possui entrada em andamento.');
           return;
         }
-        setConfirmVehicle({
-          id: json.vehicle.id,
-          plate: json.vehicle.plate,
-          model: json.vehicle.model,
-          color: json.vehicle.color,
-        });
-        setConfirmPeople(json.people || []);
-        setSelectedPersonId(json.people?.[0]?.id || null);
-        setNewPersonName('');
-        setConfirmPurpose('despacho');
-        return;
+        if (json.vehicle && typeof json.vehicle === 'object') {
+          setConfirmVehicle({
+            id: json.vehicle.id,
+            plate: json.vehicle.plate,
+            model: json.vehicle.model,
+            color: json.vehicle.color,
+          });
+          setConfirmPeople(json.people || []);
+          setSelectedPersonId(json.people?.[0]?.id || null);
+          setNewPersonName('');
+          setConfirmPurpose('despacho');
+          return;
+        }
       }
       if (json.type === 'authorized') {
         setAuthorizedInfo(json.authorized);
