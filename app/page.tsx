@@ -1,470 +1,542 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 
-type ApiResp<T> = { ok: true; data: T } | { ok: false; error: string };
+type OpenVisit = {
+  id: string;
+  checkin_time: string;
+  people: { full_name: string | null } | null;
+  vehicles: { plate: string | null } | null;
+};
 
 async function parseJsonSafe(res: Response) {
   const ct = res.headers.get('content-type') || '';
   if (!ct.includes('application/json')) {
-    // tenta ler texto para debugar
     const text = await res.text().catch(() => '');
     throw new Error(text || `Servidor retornou ${res.status} sem JSON.`);
   }
   return res.json();
 }
 
-export default function CadastroPage() {
-  // Pessoa
-  const [pFullName, setPFullName] = useState('');
-  const [pDoc, setPDoc] = useState('');
-  const [pPhone, setPPhone] = useState('');
-  const [pEmail, setPEmail] = useState('');
-  const [pNotes, setPNotes] = useState('');
-  const [pLoading, setPLoading] = useState(false);
+const formatTime = (iso: string) =>
+  new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso));
 
-  // Veículo
-  const [vPlate, setVPlate] = useState('');
-  const [vModel, setVModel] = useState('');
-  const [vColor, setVColor] = useState('');
-  const [vLoading, setVLoading] = useState(false);
+export default function Home() {
+  const [input, setInput] = useState('');
+  const [openVisits, setOpenVisits] = useState<OpenVisit[]>([]);
+  const [loadingVisits, setLoadingVisits] = useState(false);
+  const [busyVisitId, setBusyVisitId] = useState<string | null>(null);
 
-  // listas
-  const [people, setPeople] = useState<any[]>([]);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [vehiclePeople, setVehiclePeople] = useState<Record<string, any[]>>({});
-  const [expandedVehicles, setExpandedVehicles] = useState<string[]>([]);
-  const [linkSelection, setLinkSelection] = useState<Record<string, string>>({});
+  // Modal de cadastro
+  const [showModal, setShowModal] = useState(false);
+  const [pendingPlate, setPendingPlate] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registering, setRegistering] = useState(false);
 
-  const loadPeople = async () => {
+  // Modal de confirmação para placas cadastradas
+  const [confirmVehicle, setConfirmVehicle] = useState<
+    { id: string; plate: string; model: string | null; color: string | null } | null
+  >(null);
+  const [confirmPeople, setConfirmPeople] = useState<
+    { id: string; full_name: string | null }[]
+  >([]);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [newPersonName, setNewPersonName] = useState('');
+  const [linking, setLinking] = useState(false);
+  const [confirmPurpose, setConfirmPurpose] = useState('despacho');
+  const [entering, setEntering] = useState(false);
+
+  // Modal para placas apenas autorizadas
+  const [authorizedInfo, setAuthorizedInfo] = useState<
+    { plate: string; name: string; department: string } | null
+  >(null);
+
+  const loadOpenVisits = async () => {
+    setLoadingVisits(true);
     try {
-      const res = await fetch('/api/people', { cache: 'no-store' });
-      const json = await res.json().catch(() => null);
-      if (res.ok && json?.data) setPeople(json.data);
-    } catch {}
-  };
-
-  const loadVehicles = async () => {
-    try {
-      const res = await fetch('/api/vehicles', { cache: 'no-store' });
-      const json = await res.json().catch(() => null);
-      if (res.ok && json?.data) setVehicles(json.data);
-    } catch {}
-  };
-
-  const loadVehiclePeople = async () => {
-    try {
-      const res = await fetch('/api/vehicle-people', { cache: 'no-store' });
-      const json = await res.json().catch(() => null);
-      if (res.ok && json?.data) {
-        const map: Record<string, any[]> = {};
-        json.data.forEach((vp: any) => {
-          if (!map[vp.vehicleId]) map[vp.vehicleId] = [];
-          map[vp.vehicleId].push(vp);
-        });
-        setVehiclePeople(map);
-      }
-    } catch {}
-  };
-
-  useEffect(() => {
-    loadPeople();
-    loadVehicles();
-    loadVehiclePeople();
-  }, []);
-
-  const submitPessoa = async () => {
-    if (!pFullName.trim()) {
-      alert('Nome completo é obrigatório');
-      return;
-    }
-    setPLoading(true);
-    try {
-      const res = await fetch('/api/people', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name: pFullName.trim(),
-          doc_number: pDoc.trim() || null,
-          phone: pPhone.trim() || null,
-          email: pEmail.trim() || null,
-          notes: pNotes.trim() || null,
-        }),
-      });
-
-      const json = (await parseJsonSafe(res)) as ApiResp<any>;
-      if (!json.ok) {
-        alert((json as { ok: false; error: string }).error);
-        return;
-      }
-
-      alert('Pessoa cadastrada com sucesso!');
-      setPFullName('');
-      setPDoc('');
-      setPPhone('');
-      setPEmail('');
-      setPNotes('');
-      await loadPeople();
-    } catch (e: any) {
-      alert(`Falha: ${e?.message ?? e}`);
+      const res = await fetch('/api/visits/open', { cache: 'no-store' });
+      const json = await parseJsonSafe(res);
+      if (json.ok) setOpenVisits(json.data || []);
     } finally {
-      setPLoading(false);
+      setLoadingVisits(false);
     }
   };
 
-  const submitVeiculo = async () => {
-    const plate = normalizePlate(vPlate);
-    if (!plate) {
-      alert('Informe a placa (ex.: ABC1D23)');
-      return;
-    }
-    setVLoading(true);
+  const onLinkPerson = async () => {
+    if (!confirmVehicle || !newPersonName.trim()) return;
+    setLinking(true);
     try {
-      const res = await fetch('/api/vehicles', {
+      const resP = await fetch('/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plate,
-          model: vModel.trim() || null,
-          color: vColor.trim() || null,
-        }),
+        body: JSON.stringify({ full_name: newPersonName.trim() }),
       });
-
-      const json = (await parseJsonSafe(res)) as ApiResp<any>;
-      if (!json.ok) {
-        alert((json as { ok: false; error: string }).error);
+      const jsonP = await parseJsonSafe(resP);
+      if (!jsonP.ok) {
+        alert(jsonP.error || 'Falha ao cadastrar pessoa.');
         return;
       }
-      alert('Veículo cadastrado com sucesso!');
-      setVPlate('');
-      setVModel('');
-      setVColor('');
-      await loadVehicles();
-    } catch (e: any) {
-      alert(`Falha: ${e?.message ?? e}`);
-    } finally {
-      setVLoading(false);
-    }
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedVehicles((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
-    );
-  };
-
-  const linkPerson = async (vehicleId: string) => {
-    const personId = linkSelection[vehicleId];
-    if (!personId) {
-      alert('Selecione uma pessoa');
-      return;
-    }
-    try {
-      const res = await fetch('/api/vehicle-people', {
+      const personId = jsonP.data.id;
+      const resL = await fetch('/api/vehicle-people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId, personId }),
+        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId }),
       });
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao vincular.');
+      const jsonL = await parseJsonSafe(resL);
+      if (!jsonL.ok) {
+        alert(jsonL.error || 'Falha ao vincular pessoa.');
         return;
       }
-      setLinkSelection((s) => ({ ...s, [vehicleId]: '' }));
-      await loadVehiclePeople();
+      setConfirmPeople((prev) => [...prev, { id: personId, full_name: jsonP.data.full_name }]);
+      setSelectedPersonId(personId);
+      setNewPersonName('');
     } catch (e: any) {
       alert(e?.message ?? e);
+    } finally {
+      setLinking(false);
     }
   };
 
-  const unlinkPerson = async (vehicleId: string, personId: string) => {
-    if (!confirm('Desvincular este condutor?')) return;
+  const onUnlinkPerson = async (personId: string) => {
+    if (!confirmVehicle) return;
     try {
       const res = await fetch('/api/vehicle-people', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId, personId }),
+        body: JSON.stringify({ vehicleId: confirmVehicle.id, personId }),
       });
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao desvincular.');
+      const json = await parseJsonSafe(res);
+      if (!json.ok) {
+        alert(json.error || 'Falha ao desvincular.');
         return;
       }
-      await loadVehiclePeople();
+      setConfirmPeople((prev) => prev.filter((p) => p.id !== personId));
+      if (selectedPersonId === personId) setSelectedPersonId(null);
     } catch (e: any) {
       alert(e?.message ?? e);
     }
   };
 
-  const editVehicle = async (v: any) => {
-    const plateInput = prompt('Placa', v.plate);
-    if (!plateInput) return;
-    const plate = normalizePlate(plateInput);
-    if (!plate) {
-      alert('Placa inválida');
+  useEffect(() => {
+    loadOpenVisits();
+  }, []);
+
+  const onVerify = async () => {
+    const plate = normalizePlate(input);
+    if (!plate) return;
+    setShowModal(false);
+    setConfirmVehicle(null);
+    setConfirmPeople([]);
+    setSelectedPersonId(null);
+    setNewPersonName('');
+    setAuthorizedInfo(null);
+    try {
+      const res = await fetch(`/api/lookup/plate/${plate}`, { cache: 'no-store' });
+      const json = await parseJsonSafe(res);
+      if (json.ok === false) {
+        alert(json.error || 'Erro na verificação da placa.');
+        return;
+      }
+      if (json.type === 'registered') {
+        const open = (json.visits || []).find((v: any) => !v.checkout_time);
+        if (open) {
+          alert('Placa já possui entrada em andamento.');
+          return;
+        }
+        if (json.vehicle && typeof json.vehicle === 'object') {
+          setConfirmVehicle({
+            id: json.vehicle.id,
+            plate: json.vehicle.plate,
+            model: json.vehicle.model,
+            color: json.vehicle.color,
+          });
+          setConfirmPeople(json.people || []);
+          setSelectedPersonId(json.people?.[0]?.id || null);
+          setNewPersonName('');
+          setConfirmPurpose('despacho');
+          return;
+        }
+      }
+      if (json.type === 'authorized') {
+        setAuthorizedInfo(json.authorized);
+        return;
+      }
+      setPendingPlate(plate);
+      setShowModal(true);
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    }
+  };
+
+  const onEntryConfirm = async () => {
+    if (!confirmVehicle) return;
+    if (!selectedPersonId) {
+      alert('Selecione ou cadastre uma pessoa vinculada.');
       return;
     }
-    const model = prompt('Modelo', v.model || '') || null;
-    const color = prompt('Cor', v.color || '') || null;
+    setEntering(true);
     try {
-      const res = await fetch(`/api/vehicles/${v.id}`, {
-        method: 'PUT',
+      const resCheck = await fetch('/api/visits/checkin', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plate, model, color }),
+        body: JSON.stringify({
+          vehicleId: confirmVehicle.id,
+          personId: selectedPersonId,
+          purpose: confirmPurpose,
+        }),
       });
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao editar.');
+      const jsonCheck = await parseJsonSafe(resCheck);
+      if (!jsonCheck.ok) {
+        alert(jsonCheck.error || 'Falha na entrada.');
         return;
       }
-      await loadVehicles();
-      await loadVehiclePeople();
+      setConfirmVehicle(null);
+      setConfirmPeople([]);
+      setSelectedPersonId(null);
+      setNewPersonName('');
+      setConfirmPurpose('despacho');
+      setInput('');
+      await loadOpenVisits();
     } catch (e: any) {
       alert(e?.message ?? e);
+    } finally {
+      setEntering(false);
     }
   };
 
-  const deleteVehicle = async (id: string) => {
-    if (!confirm('Deseja excluir este veículo?')) return;
+  const onRegisterAndEntry = async () => {
+    setRegistering(true);
     try {
-      const res = await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao excluir.');
+      let personId: string | null = null;
+      if (registerName.trim()) {
+        const resP = await fetch('/api/people', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name: registerName.trim() }),
+        });
+        const jsonP = await parseJsonSafe(resP);
+        if (!jsonP.ok) {
+          alert(jsonP.error || 'Falha ao cadastrar pessoa.');
+          return;
+        }
+        personId = jsonP.data.id;
+      }
+      const resV = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plate: pendingPlate }),
+      });
+      const jsonV = await parseJsonSafe(resV);
+      if (!jsonV.ok) {
+        alert(jsonV.error || 'Falha ao cadastrar veículo.');
         return;
       }
-      await loadVehicles();
-      await loadVehiclePeople();
+      if (personId) {
+        const resLink = await fetch('/api/vehicle-people', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleId: jsonV.data.id, personId }),
+        });
+        const jsonLink = await parseJsonSafe(resLink);
+        if (!jsonLink.ok) {
+          alert(jsonLink.error || 'Falha ao vincular pessoa.');
+          return;
+        }
+      }
+      const resC = await fetch('/api/visits/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId: jsonV.data.id, personId, purpose: 'despacho' }),
+      });
+      const jsonC = await parseJsonSafe(resC);
+      if (!jsonC.ok) {
+        alert(jsonC.error || 'Falha na entrada.');
+        return;
+      }
+      setShowModal(false);
+      setRegisterName('');
+      setPendingPlate('');
+      setInput('');
+      await loadOpenVisits();
     } catch (e: any) {
       alert(e?.message ?? e);
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  const onCheckout = async (visitId: string) => {
+    setBusyVisitId(visitId);
+    setOpenVisits((prev) => prev.filter((v) => v.id !== visitId));
+    try {
+      const res = await fetch(`/api/visits/${visitId}/checkout`, {
+        method: 'POST',
+        cache: 'no-store',
+      });
+      const json = await parseJsonSafe(res);
+      if (!json.ok) {
+        throw new Error(json.error || 'Falha na saída.');
+      }
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    } finally {
+      setBusyVisitId(null);
+      await loadOpenVisits();
     }
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Cadastros</h1>
-
-      {/* Cadastro de Pessoa */}
-      <div className="rounded border bg-white p-4">
-        <h2 className="mb-3 text-lg font-medium">Pessoa</h2>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm">Nome completo *</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={pFullName}
-              onChange={(e) => setPFullName(e.target.value)}
-              placeholder="Ex.: João da Silva"
-            />
-          </div>
-          <div>
-            <label className="block text-sm">Documento (opcional)</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={pDoc}
-              onChange={(e) => setPDoc(e.target.value)}
-              placeholder="Ex.: 12345678900"
-            />
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-sm">Telefone (opcional)</label>
-              <input
-                className="w-full rounded border px-3 py-2"
-                value={pPhone}
-                onChange={(e) => setPPhone(e.target.value)}
-                placeholder="Ex.: (11) 90000-0000"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm">E-mail (opcional)</label>
-              <input
-                className="w-full rounded border px-3 py-2"
-                value={pEmail}
-                onChange={(e) => setPEmail(e.target.value)}
-                placeholder="Ex.: joao@email.com"
-                type="email"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm">Observações (opcional)</label>
-            <textarea
-              className="w-full rounded border px-3 py-2"
-              value={pNotes}
-              onChange={(e) => setPNotes(e.target.value)}
-              placeholder="Anotações sobre a pessoa"
-              rows={3}
-            />
-          </div>
+      <section>
+        <h1 className="text-2xl font-semibold text-center">Controle de Placas</h1>
+        <p className="mt-2 text-center">Digite a placa para verificar:</p>
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ex: ABC1234"
+            className="w-full max-w-xs rounded border px-3 py-2"
+          />
           <button
-            onClick={submitPessoa}
-            className="rounded bg-green-600 px-4 py-2 text-white"
-            disabled={pLoading}
+            onClick={onVerify}
+            className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white"
           >
-            {pLoading ? 'Salvando...' : 'Salvar Pessoa'}
+            Verificar
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Cadastro de Veículo */}
-      <div className="rounded border bg-white p-4">
-        <h2 className="mb-3 text-lg font-medium">Veículo</h2>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm">Placa *</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={vPlate}
-              onChange={(e) => setVPlate(e.target.value)}
-              placeholder="Ex.: ABC1D23"
-            />
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-sm">Modelo (opcional)</label>
-              <input
-                className="w-full rounded border px-3 py-2"
-                value={vModel}
-                onChange={(e) => setVModel(e.target.value)}
-                placeholder="Ex.: Caminhão"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm">Cor (opcional)</label>
-              <input
-                className="w-full rounded border px-3 py-2"
-                value={vColor}
-                onChange={(e) => setVColor(e.target.value)}
-                placeholder="Ex.: Branco"
-              />
-            </div>
-          </div>
-          <button
-            onClick={submitVeiculo}
-            className="rounded bg-blue-600 px-4 py-2 text-white"
-            disabled={vLoading}
-          >
-            {vLoading ? 'Salvando...' : 'Salvar Veículo'}
-          </button>
-        </div>
-      </div>
-
-      {/* Listas de Cadastros */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded border bg-white p-4">
-          <h2 className="mb-3 text-lg font-medium">Pessoas cadastradas</h2>
-          {people.length === 0 ? (
-            <p className="text-sm text-gray-500">Nenhuma pessoa cadastrada.</p>
-          ) : (
-            <ul className="divide-y">
-              {people.map((p) => (
-                <li key={p.id} className="py-2 text-sm">
-                  <span className="font-medium">{p.full_name}</span>
-                  {p.doc_number && (
-                    <span className="text-gray-600"> — {p.doc_number}</span>
-                  )}
-                </li>
+      <section>
+        <h2 className="text-2xl font-medium text-center">Placas em andamento</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full border-collapse border border-gray-300 text-sm">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="border border-gray-300 p-2 text-center">Placa</th>
+                <th className="border border-gray-300 p-2 text-center">Nome</th>
+                <th className="border border-gray-300 p-2 text-center">Entrada</th>
+                <th className="border border-gray-300 p-2 text-center">Saída</th>
+              </tr>
+            </thead>
+            <tbody>
+              {openVisits.map((v) => (
+                <tr key={v.id}>
+                  <td className="border border-gray-300 p-2 text-center">
+                    {v.vehicles?.plate ?? '-'}
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center">
+                    {v.people?.full_name ?? '-'}
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center">
+                    {formatTime(v.checkin_time)}
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center">
+                    <button
+                      onClick={() => onCheckout(v.id)}
+                      className="rounded bg-red-600 px-3 py-1 text-white"
+                      disabled={busyVisitId === v.id}
+                    >
+                      {busyVisitId === v.id ? 'Saindo...' : 'Saída'}
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="rounded border bg-white p-4">
-          <h2 className="mb-3 text-lg font-medium">Veículos cadastrados</h2>
-          {vehicles.length === 0 ? (
-            <p className="text-sm text-gray-500">Nenhum veículo cadastrado.</p>
-          ) : (
-            <div className="space-y-4">
-              {vehicles.map((v) => (
-                <div key={v.id} className="rounded border p-4">
-                  <div
-                    className="cursor-pointer"
-                    onClick={() => toggleExpand(v.id)}
+              {openVisits.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="border border-gray-300 p-2 text-center text-gray-500"
                   >
-                    <span className="font-medium">{v.plate}</span>
-                    {v.model && (
-                      <span className="text-gray-600"> — {v.model}</span>
-                    )}
-                    {v.color && (
-                      <span className="text-gray-600"> ({v.color})</span>
-                    )}
-                  </div>
-                  {expandedVehicles.includes(v.id) && (
-                    <div className="mt-3 space-y-2">
-                      <div>
-                        {vehiclePeople[v.id]?.length ? (
-                          <ul className="space-y-1">
-                            {vehiclePeople[v.id].map((vp: any) => (
-                              <li
-                                key={vp.personId}
-                                className="flex justify-between text-sm"
-                              >
-                                <span>{vp.person.full_name}</span>
-                                <button
-                                  className="text-red-600"
-                                  onClick={() =>
-                                    unlinkPerson(v.id, vp.personId)
-                                  }
-                                >
-                                  Desvincular
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            Nenhum condutor vinculado.
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <select
-                          className="flex-1 rounded border px-2 py-1"
-                          value={linkSelection[v.id] || ''}
-                          onChange={(e) =>
-                            setLinkSelection((s) => ({
-                              ...s,
-                              [v.id]: e.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Selecionar pessoa</option>
-                          {people.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.full_name}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          onClick={() => linkPerson(v.id)}
-                          className="rounded bg-green-600 px-2 py-1 text-white text-sm"
-                        >
-                          Vincular
-                        </button>
-                      </div>
-                      <div className="flex gap-2 pt-2">
-                        <button
-                          onClick={() => editVehicle(v)}
-                          className="rounded bg-blue-600 px-3 py-1 text-white text-sm"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => deleteVehicle(v.id)}
-                          className="rounded bg-red-600 px-3 py-1 text-white text-sm"
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                    {loadingVisits
+                      ? 'Carregando...'
+                      : 'Nenhuma placa em andamento.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
+      </section>
+
+        {confirmVehicle && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+            <div className="w-80 space-y-3 rounded bg-white p-4">
+              <h2 className="text-lg font-medium text-green-600">CADASTRADO</h2>
+              <div>
+                <label className="block text-sm">Placa</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmVehicle.plate}
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Modelo</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmVehicle.model ?? ''}
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Cor</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmVehicle.color ?? ''}
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Nome</label>
+                {confirmPeople.length > 0 ? (
+                  <select
+                    className="w-full rounded border px-3 py-2"
+                    value={selectedPersonId ?? ''}
+                    onChange={(e) =>
+                      setSelectedPersonId(e.target.value || null)
+                    }
+                  >
+                    <option value="">Selecione</option>
+                    {confirmPeople.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.full_name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-gray-500">Nenhuma pessoa vinculada.</p>
+                )}
+                {confirmPeople.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {confirmPeople.map((p) => (
+                      <li key={p.id} className="flex justify-between">
+                        <span>{p.full_name}</span>
+                        <button
+                          onClick={() => onUnlinkPerson(p.id)}
+                          className="text-red-600"
+                        >
+                          Desvincular
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm">Adicionar nova pessoa</label>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 rounded border px-3 py-2"
+                    value={newPersonName}
+                    onChange={(e) => setNewPersonName(e.target.value)}
+                  />
+                  <button
+                    onClick={onLinkPerson}
+                    className="rounded bg-blue-600 px-3 py-2 text-white"
+                    disabled={linking}
+                  >
+                    {linking ? 'Vinculando...' : 'Vincular'}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm">Finalidade</label>
+                <select
+                  className="w-full rounded border px-3 py-2"
+                  value={confirmPurpose}
+                  onChange={(e) => setConfirmPurpose(e.target.value)}
+                >
+                  <option value="despacho">Despacho</option>
+                  <option value="retirada">Retiro</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => {
+                    setConfirmVehicle(null);
+                    setConfirmPeople([]);
+                    setSelectedPersonId(null);
+                    setNewPersonName('');
+                    setConfirmPurpose('despacho');
+                  }}
+                  className="rounded border px-3 py-2"
+                  disabled={entering}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={onEntryConfirm}
+                  className="rounded bg-green-600 px-4 py-2 text-white"
+                  disabled={entering}
+                >
+                  {entering ? 'Entrando...' : 'Entrada'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {authorizedInfo && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+            <div className="w-80 space-y-2 rounded bg-white p-4">
+              <h2 className="text-lg font-medium text-green-600">AUTORIZADO</h2>
+              <p><strong>Placa:</strong> {authorizedInfo.plate}</p>
+              <p><strong>Nome:</strong> {authorizedInfo.name}</p>
+              <p><strong>Departamento:</strong> {authorizedInfo.department}</p>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setAuthorizedInfo(null)}
+                  className="rounded bg-blue-600 px-4 py-2 text-white"
+                >
+                  Ok
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+            <div className="w-80 space-y-3 rounded bg-white p-4">
+              <h2 className="text-lg font-medium">Cadastrar Placa</h2>
+              <div>
+                <label className="block text-sm">Placa</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={pendingPlate}
+                  disabled
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Nome (opcional)</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={registerName}
+                  onChange={(e) => setRegisterName(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="rounded border px-3 py-2"
+                  disabled={registering}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={onRegisterAndEntry}
+                  className="rounded bg-green-600 px-4 py-2 text-white"
+                  disabled={registering}
+                >
+                  {registering ? 'Salvando...' : 'Entrada'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
