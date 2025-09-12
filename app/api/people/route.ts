@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getCompanyId } from '@/lib/env';
+import { z } from 'zod';
+
+const personSchema = z.object({
+  full_name: z.string().trim().min(1, 'Nome completo é obrigatório.'),
+  doc_number: z.string().trim().nullish(),
+  phone: z.string().trim().nullish(),
+  email: z.string().trim().nullish(),
+  notes: z.string().trim().nullish(),
+});
 
 export async function GET() {
   try {
@@ -32,16 +41,13 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const full_name: string | undefined = body?.full_name?.trim();
-    const doc_number: string | null = body?.doc_number ?? null;
-    const phone: string | null = body?.phone ?? null;
-    const email: string | null = body?.email ?? null;
-    const notes: string | null = body?.notes ?? null;
-
-    if (!full_name) {
-      return NextResponse.json({ ok: false, error: 'Nome completo é obrigatório.' }, { status: 400 });
+    const parsed = personSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.errors.map((e) => e.message).join(' ');
+      return NextResponse.json({ ok: false, error: msg }, { status: 400 });
     }
+
+    const { full_name, doc_number, phone, email, notes } = parsed.data;
 
     const companyId = getCompanyId();
     const insert = {
