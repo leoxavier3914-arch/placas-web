@@ -21,41 +21,34 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  // First, try to find a vehicle with the given plate
-  const { data: vehicle, error: vehicleErr } = await supabaseAdmin
-    .from('vehicles')
-    .select('*')
-    .eq('company_id', companyId)
-    .eq('plate', plate)
-    .maybeSingle();
+
+  // Query vehicle with related people and authorized plate in parallel
+  const [{ data: vehicle, error: vehicleErr }, { data: authorized, error: authErr }] =
+    await Promise.all([
+      supabaseAdmin
+        .from('vehicles')
+        .select('id, plate, model, color, vehicle_people(people(id, full_name))')
+        .eq('company_id', companyId)
+        .eq('plate', plate)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('authorized')
+        .select('plate, name, department')
+        .eq('company_id', companyId)
+        .eq('plate', plate)
+        .maybeSingle(),
+    ]);
+
 
   if (vehicleErr)
     return NextResponse.json({ ok: false, error: vehicleErr.message }, { status: 400 });
 
   if (vehicle) {
-    // Fetch all people linked to this vehicle (if any)
-    const { data: vpList, error: vpErr } = await supabaseAdmin
-      .from('vehicle_people')
-      .select('people:people (id, full_name)')
-      .eq('company_id', companyId)
-      .eq('vehicle_id', vehicle.id);
-
-    if (vpErr)
-      return NextResponse.json({ ok: false, error: vpErr.message }, { status: 400 });
-
     const people =
-      vpList?.map((vp: any) => vp.people).filter((p: any) => p) || [];
-
-    return NextResponse.json({ type: 'registered', vehicle, people });
+      vehicle.vehicle_people?.map((vp: any) => vp.people).filter((p: any) => p) || [];
+    const { vehicle_people, ...vehicleData } = vehicle;
+    return NextResponse.json({ type: 'registered', vehicle: vehicleData, people });
   }
-
-  // Not registered: check if the plate is authorized
-  const { data: authorized, error: authErr } = await supabaseAdmin
-    .from('authorized')
-    .select('plate, name, department')
-    .eq('company_id', companyId)
-    .eq('plate', plate)
-    .maybeSingle();
 
   if (authErr)
     return NextResponse.json({ ok: false, error: authErr.message }, { status: 400 });
