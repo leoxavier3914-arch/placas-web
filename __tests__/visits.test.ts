@@ -83,13 +83,31 @@ describe('POST /api/visits/checkin', () => {
 
 describe('POST /api/visits/[id]/checkout', () => {
   it('closes a visit', async () => {
+    let call = 0;
     supabaseMock.from.mockImplementation((table: string) => {
       if (table === 'visits') {
+        call++;
+        if (call === 1) {
+          return {
+            select: () => ({
+              eq: () => ({
+                single: async () => ({
+                  data: { company_id: 'company-1', branch_id: 'branch-1' },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
         return {
           update: () => ({
             eq: () => ({
-              select: () => ({
-                single: async () => ({ data: { id: '1' }, error: null }),
+              eq: () => ({
+                eq: () => ({
+                  select: () => ({
+                    single: async () => ({ data: { id: '1' }, error: null }),
+                  }),
+                }),
               }),
             }),
           }),
