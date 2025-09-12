@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
 import { getCompanyId } from '@/lib/env';
+import { ensurePerson, ensureVehicle } from '@/lib/ensure';
 
 export async function GET() {
   try {
@@ -78,66 +79,24 @@ export async function POST(req: Request) {
     const companyId = getCompanyId();
     const supabaseAdmin = getSupabaseAdmin();
 
-    // ensure person exists
     let personId: string;
-    const { data: existingPerson, error: personSelErr } = await supabaseAdmin
-      .from('people')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('full_name', name)
-      .maybeSingle();
-    if (personSelErr) {
-      return NextResponse.json({ ok: false, error: personSelErr.message }, { status: 400 });
-    }
-    if (existingPerson) {
-      personId = existingPerson.id;
-    } else {
-      const { data: newPerson, error: personInsErr } = await supabaseAdmin
-        .from('people')
-        .insert({ company_id: companyId, full_name: name })
-        .select()
-        .single();
-      if (personInsErr) {
-        return NextResponse.json({ ok: false, error: personInsErr.message }, { status: 400 });
-      }
-      personId = newPerson.id;
+    try {
+      personId = await ensurePerson(supabaseAdmin, companyId, name);
+    } catch (e: any) {
+      return NextResponse.json({ ok: false, error: e.message }, { status: 400 });
     }
 
-    // ensure vehicle exists
     let vehicleId: string;
-    const { data: existingVehicle, error: vehicleSelErr } = await supabaseAdmin
-      .from('vehicles')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('plate', plate)
-      .maybeSingle();
-    if (vehicleSelErr) {
-      return NextResponse.json({ ok: false, error: vehicleSelErr.message }, { status: 400 });
-    }
-    if (existingVehicle) {
-      vehicleId = existingVehicle.id;
-      if (model || color) {
-        const { error: vehicleUpdErr } = await supabaseAdmin
-          .from('vehicles')
-          .update({ model, color })
-          .eq('id', vehicleId);
-        if (vehicleUpdErr) {
-          return NextResponse.json(
-            { ok: false, error: vehicleUpdErr.message },
-            { status: 400 }
-          );
-        }
-      }
-    } else {
-      const { data: newVehicle, error: vehicleInsErr } = await supabaseAdmin
-        .from('vehicles')
-        .insert({ company_id: companyId, plate, model, color })
-        .select()
-        .single();
-      if (vehicleInsErr) {
-        return NextResponse.json({ ok: false, error: vehicleInsErr.message }, { status: 400 });
-      }
-      vehicleId = newVehicle.id;
+    try {
+      vehicleId = await ensureVehicle(
+        supabaseAdmin,
+        companyId,
+        plate,
+        model,
+        color
+      );
+    } catch (e: any) {
+      return NextResponse.json({ ok: false, error: e.message }, { status: 400 });
     }
 
     const insert = {
