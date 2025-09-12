@@ -11,4 +11,8 @@ const envSchema = z.object({
 
 const env = envSchema.parse(process.env);
 
+export function getCompanyId() {
+  return env.COMPANY_ID;
+}
+
 export default env;
