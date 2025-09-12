@@ -22,6 +22,8 @@ export default function CadastroPage() {
   const [pEmail, setPEmail] = useState('');
   const [pNotes, setPNotes] = useState('');
   const [pPlate, setPPlate] = useState('');
+  const [pModel, setPModel] = useState('');
+  const [pColor, setPColor] = useState('');
   const [pLoading, setPLoading] = useState(false);
 
   // Veículo
@@ -72,7 +74,11 @@ export default function CadastroPage() {
         const resVehicle = await fetch('/api/vehicles', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plate }),
+          body: JSON.stringify({
+            plate,
+            model: pModel.trim() || null,
+            color: pColor.trim() || null,
+          }),
         });
         const jsonVehicle = (await parseJsonSafe(resVehicle)) as ApiResp<any>;
         if (!jsonVehicle.ok) {
@@ -120,6 +126,8 @@ export default function CadastroPage() {
       setPEmail('');
       setPNotes('');
       setPPlate('');
+      setPModel('');
+      setPColor('');
       await loadPeople();
       await loadVehicles();
     } catch (e: any) {
@@ -191,25 +199,45 @@ export default function CadastroPage() {
             />
           </div>
           <div>
-            <label className="block text-sm">Placa *</label>
+          <label className="block text-sm">Placa *</label>
+          <input
+            className="w-full rounded border px-3 py-2"
+            value={pPlate}
+            onChange={(e) => setPPlate(e.target.value.toUpperCase())}
+            list="plates-list"
+            placeholder="Ex.: ABC1D23"
+          />
+          <datalist id="plates-list">
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.plate} />
+            ))}
+          </datalist>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="block text-sm">Modelo (opcional)</label>
             <input
               className="w-full rounded border px-3 py-2"
-              value={pPlate}
-              onChange={(e) => setPPlate(e.target.value.toUpperCase())}
-              list="plates-list"
-              placeholder="Ex.: ABC1D23"
+              value={pModel}
+              onChange={(e) => setPModel(e.target.value)}
+              placeholder="Ex.: Caminhão"
             />
-            <datalist id="plates-list">
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.plate} />
-              ))}
-            </datalist>
           </div>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-sm">Telefone (opcional)</label>
-              <input
-                className="w-full rounded border px-3 py-2"
+          <div className="flex-1">
+            <label className="block text-sm">Cor (opcional)</label>
+            <input
+              className="w-full rounded border px-3 py-2"
+              value={pColor}
+              onChange={(e) => setPColor(e.target.value)}
+              placeholder="Ex.: Branco"
+            />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="block text-sm">Telefone (opcional)</label>
+            <input
+              className="w-full rounded border px-3 py-2"
                 value={pPhone}
                 onChange={(e) => setPPhone(e.target.value)}
                 placeholder="Ex.: (11) 90000-0000"
@@ -319,6 +347,9 @@ export default function CadastroPage() {
                   <span className="font-medium">{v.plate}</span>
                   {v.model && (
                     <span className="text-gray-600"> — {v.model}</span>
+                  )}
+                  {v.color && (
+                    <span className="text-gray-600"> ({v.color})</span>
                   )}
                 </li>
               ))}

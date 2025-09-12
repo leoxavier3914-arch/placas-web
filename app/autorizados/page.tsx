@@ -6,6 +6,8 @@ export default function AutorizadosPage() {
   const [plate, setPlate] = useState('');
   const [name, setName] = useState('');
   const [department, setDepartment] = useState('');
+  const [model, setModel] = useState('');
+  const [color, setColor] = useState('');
   const [loading, setLoading] = useState(false);
   const [authorized, setAuthorized] = useState<any[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -32,7 +34,13 @@ export default function AutorizadosPage() {
       const res = await fetch(editId ? `/api/authorized/${editId}` : '/api/authorized', {
         method: editId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plate: p, name: name.trim(), department: department.trim() }),
+        body: JSON.stringify({
+          plate: p,
+          name: name.trim(),
+          department: department.trim(),
+          model: model.trim() || null,
+          color: color.trim() || null,
+        }),
         cache: 'no-store',
       });
       const json = await res.json().catch(() => null);
@@ -65,6 +73,8 @@ export default function AutorizadosPage() {
       setPlate('');
       setName('');
       setDepartment('');
+      setModel('');
+      setColor('');
       setEditId(null);
       fetchAuthorized();
     } catch (e: any) {
@@ -79,6 +89,8 @@ export default function AutorizadosPage() {
     setPlate(a.plate);
     setName(a.name);
     setDepartment(a.department);
+    setModel(a.model || '');
+    setColor(a.color || '');
   };
 
   const remove = async (id: string) => {
@@ -130,6 +142,26 @@ export default function AutorizadosPage() {
             placeholder="Departamento"
           />
         </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="block text-sm">Modelo (opcional)</label>
+            <input
+              className="w-full rounded border px-3 py-2"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="Ex.: Caminhão"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm">Cor (opcional)</label>
+            <input
+              className="w-full rounded border px-3 py-2"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              placeholder="Ex.: Branco"
+            />
+          </div>
+        </div>
         <button
           onClick={submit}
           className="rounded bg-green-600 px-4 py-2 text-white"
@@ -153,7 +185,15 @@ export default function AutorizadosPage() {
             {authorized.map((a) => (
               <li key={a.id} className="flex items-center justify-between py-2">
                 <div>
-                  <p className="font-medium">{a.plate}</p>
+                  <p className="font-medium">
+                    {a.plate}
+                    {a.model && (
+                      <span className="text-gray-600"> — {a.model}</span>
+                    )}
+                    {a.color && (
+                      <span className="text-gray-600"> ({a.color})</span>
+                    )}
+                  </p>
                   <p className="text-sm text-gray-600">
                     {a.name} - {a.department}
                   </p>
