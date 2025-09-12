@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const getValidationErrorMsg = (
   parsed: z.SafeParseReturnType<any, any>
 ): string => {
+  if (parsed.success) return '';
   const invalid =
     parsed.error.errors.length === 1 &&
     parsed.error.errors[0].path.length === 0;

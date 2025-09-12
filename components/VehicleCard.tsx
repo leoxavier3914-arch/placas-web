@@ -65,37 +65,7 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
     }
   };
 
- 
   const editVehicle = () => setEditOpen(true);
-
-  const editVehicle = async () => {
-    const plateInput = prompt('Placa', vehicle.plate);
-    if (!plateInput) return;
-    const plate = normalizePlate(plateInput);
-    if (!plate) {
-      toast.error('Placa inválida');
-      return;
-    }
-    const model = prompt('Modelo', vehicle.model || '') || null;
-    const color = prompt('Cor', vehicle.color || '') || null;
-    try {
-      const res = await fetch(`/api/vehicles/${vehicle.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plate, model, color }),
-      });
-      const json = await parseJsonSafe<{ ok?: boolean; error?: string }>(res).catch(() => null);
-      if (!res.ok || !json?.ok) {
-        toast.error(json?.error || 'Falha ao editar.');
-        return;
-      }
-      await onUpdated();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
-    }
-  };
- 
-
   const deleteVehicle = async () => {
     try {
       const res = await fetch(`/api/vehicles/${vehicle.id}`, { method: 'DELETE' });

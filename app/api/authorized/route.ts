@@ -98,8 +98,8 @@ export async function POST(req: Request) {
         supabaseAdmin,
         companyId,
         plate,
-        model,
-        color
+        model ?? null,
+        color ?? null
       );
     } catch (e: any) {
       return NextResponse.json({ ok: false, error: e.message }, { status: 400 });

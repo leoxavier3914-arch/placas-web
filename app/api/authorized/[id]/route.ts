@@ -5,7 +5,6 @@ import env from '@/lib/env';
 import { ensurePerson, ensureVehicle } from '@/lib/ensure';
 import { getValidationErrorMsg } from '@/lib/validation';
 import { z } from 'zod';
-import { parseJsonSafe } from '@/lib/api';
 
 const authorizedSchema = z.object({
   plate: z
@@ -25,7 +24,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await parseJsonSafe(req).catch(() => null);
+    const body = await req.json().catch(() => null);
     const parsed = authorizedSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -52,8 +51,8 @@ export async function PUT(
         supabaseAdmin,
         companyId,
         plate,
-        model,
-        color
+        model ?? null,
+        color ?? null
       );
     } catch (e: any) {
       return NextResponse.json({ ok: false, error: e.message }, { status: 400 });

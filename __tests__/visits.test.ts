@@ -9,6 +9,7 @@ vi.mock('@/lib/supabaseAdmin', () => ({
 }));
 
 vi.mock('@/lib/env', () => ({
+  getCompanyId: () => 'company-1',
   default: {
     COMPANY_ID: 'company-1',
     DEFAULT_BRANCH_ID: 'branch-1',
@@ -18,6 +19,8 @@ vi.mock('@/lib/env', () => ({
     NODE_ENV: 'test',
   },
 }));
+
+process.env.DEFAULT_BRANCH_ID = 'branch-1';
 
 import { GET as openGET } from '@/app/api/visits/open/route';
 import { POST as checkinPOST } from '@/app/api/visits/checkin/route';
