@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 import { z } from 'zod';
 
 const personSchema = z.object({
@@ -13,7 +13,7 @@ const personSchema = z.object({
 
 export async function GET() {
   try {
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('people')
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
     const { full_name, doc_number, phone, email, notes } = parsed.data;
 
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const insert = {
       company_id: companyId,
       full_name,

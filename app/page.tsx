@@ -13,7 +13,6 @@ export default function Home() {
   const [openVisits, setOpenVisits] = useState<OpenVisit[]>([]);
   const [loadingVisits, setLoadingVisits] = useState(false);
   const [busyVisitId, setBusyVisitId] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
   // Modal de cadastro
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [verificando, setVerificando] = useState(false);
@@ -56,7 +55,6 @@ export default function Home() {
     setConfirmVehicle(null);
     setConfirmPeople([]);
     setAuthorizedInfo(null);
-    setChecking(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
@@ -92,6 +90,7 @@ export default function Home() {
         return;
       }
       setPendingPlate(plate);
+ 
       } catch (e) {
         if (e instanceof Error && e.name === 'AbortError') {
           toast.error('Tempo de consulta esgotado. Tente novamente.');
@@ -104,6 +103,7 @@ export default function Home() {
 
       }
     };
+
 
   const onCheckout = async (visitId: string) => {
     setBusyVisitId(visitId);
@@ -137,14 +137,15 @@ export default function Home() {
             placeholder="Ex: ABC1234"
             className="w-full max-w-xs rounded border px-3 py-2"
           />
-            <button
-              onClick={onVerify}
-              disabled={verificando}
-              className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50"
-            >
-              {verificando ? 'Verificando…' : 'Verificar'}
-
-            </button>
+ 
+          <button
+            onClick={onVerify}
+            disabled={verificando}
+            className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50"
+          
+            {verificando ? 'Verificando…' : 'Verificar'}
+          </button>
+ 
         </div>
       </section>
 
