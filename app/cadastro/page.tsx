@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { normalizePlate, logError } from '@/lib/utils';
+import { toast } from '@/components/Toast';
 
 type ApiResp<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -49,7 +50,7 @@ export default function CadastroPage() {
       if (res.ok && json?.data) setPeople(json.data);
     } catch (e) {
       logError('loadPeople', e);
-      alert('Falha ao carregar pessoas.');
+      toast.error('Falha ao carregar pessoas.');
     }
   };
 
@@ -60,7 +61,7 @@ export default function CadastroPage() {
       if (res.ok && json?.data) setVehicles(json.data);
     } catch (e) {
       logError('loadVehicles', e);
-      alert('Falha ao carregar veículos.');
+      toast.error('Falha ao carregar veículos.');
     }
   };
 
@@ -78,7 +79,7 @@ export default function CadastroPage() {
       }
     } catch (e) {
       logError('loadVehiclePeople', e);
-      alert('Falha ao carregar vínculos de veículos.');
+      toast.error('Falha ao carregar vínculos de veículos.');
     }
   };
 
@@ -90,12 +91,12 @@ export default function CadastroPage() {
 
     const submitPessoa = async () => {
       if (!pFullName.trim()) {
-        alert('Nome completo é obrigatório');
+        toast.error('Nome completo é obrigatório');
         return;
       }
       const plate = normalizePlate(pPlate);
       if (!plate) {
-        alert('Informe a placa (ex.: ABC1D23)');
+        toast.error('Informe a placa (ex.: ABC1D23)');
         return;
       }
       setPLoading(true);
@@ -113,7 +114,7 @@ export default function CadastroPage() {
         });
         const jsonVehicle = (await parseJsonSafe(resVehicle)) as ApiResp<any>;
         if (!jsonVehicle.ok) {
-          alert((jsonVehicle as { ok: false; error: string }).error);
+          toast.error((jsonVehicle as { ok: false; error: string }).error);
           return;
         }
         vehicle = jsonVehicle.data;
@@ -135,11 +136,11 @@ export default function CadastroPage() {
 
       const json = (await parseJsonSafe(res)) as ApiResp<any>;
       if (!json.ok) {
-        alert((json as { ok: false; error: string }).error);
+        toast.error((json as { ok: false; error: string }).error);
         return;
       }
 
-      alert('Pessoa cadastrada com sucesso!');
+      toast.success('Pessoa cadastrada com sucesso!');
       setPFullName('');
       setPDoc('');
       setPPhone('');
@@ -151,7 +152,7 @@ export default function CadastroPage() {
  
       await loadPeople();
     } catch (e: any) {
-      alert(`Falha: ${e?.message ?? e}`);
+      toast.error(`Falha: ${e?.message ?? e}`);
     } finally {
       setPLoading(false);
     }
@@ -160,7 +161,7 @@ export default function CadastroPage() {
   const submitVeiculo = async () => {
     const plate = normalizePlate(vPlate);
     if (!plate) {
-      alert('Informe a placa (ex.: ABC1D23)');
+      toast.error('Informe a placa (ex.: ABC1D23)');
       return;
     }
     setVLoading(true);
@@ -177,16 +178,16 @@ export default function CadastroPage() {
 
       const json = (await parseJsonSafe(res)) as ApiResp<any>;
       if (!json.ok) {
-        alert((json as { ok: false; error: string }).error);
+        toast.error((json as { ok: false; error: string }).error);
         return;
       }
-      alert('Veículo cadastrado com sucesso!');
+      toast.success('Veículo cadastrado com sucesso!');
       setVPlate('');
       setVModel('');
       setVColor('');
       await loadVehicles();
     } catch (e: any) {
-      alert(`Falha: ${e?.message ?? e}`);
+      toast.error(`Falha: ${e?.message ?? e}`);
     } finally {
       setVLoading(false);
     }
@@ -201,7 +202,7 @@ export default function CadastroPage() {
   const linkPerson = async (vehicleId: string) => {
     const personId = linkSelection[vehicleId];
     if (!personId) {
-      alert('Selecione uma pessoa');
+      toast.error('Selecione uma pessoa');
       return;
     }
     try {
@@ -212,13 +213,13 @@ export default function CadastroPage() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao vincular.');
+        toast.error(json?.error || 'Falha ao vincular.');
         return;
       }
       setLinkSelection((s) => ({ ...s, [vehicleId]: '' }));
       await loadVehiclePeople();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     }
   };
 
@@ -232,12 +233,12 @@ export default function CadastroPage() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao desvincular.');
+        toast.error(json?.error || 'Falha ao desvincular.');
         return;
       }
       await loadVehiclePeople();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     }
   };
 
@@ -246,7 +247,7 @@ export default function CadastroPage() {
     if (!plateInput) return;
     const plate = normalizePlate(plateInput);
     if (!plate) {
-      alert('Placa inválida');
+      toast.error('Placa inválida');
       return;
     }
     const model = prompt('Modelo', v.model || '') || null;
@@ -259,13 +260,13 @@ export default function CadastroPage() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao editar.');
+        toast.error(json?.error || 'Falha ao editar.');
         return;
       }
       await loadVehicles();
       await loadVehiclePeople();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     }
   };
 
@@ -275,13 +276,13 @@ export default function CadastroPage() {
       const res = await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) {
-        alert(json?.error || 'Falha ao excluir.');
+        toast.error(json?.error || 'Falha ao excluir.');
         return;
       }
       await loadVehicles();
       await loadVehiclePeople();
     } catch (e: any) {
-      alert(e?.message ?? e);
+      toast.error(e?.message ?? e);
     }
   };
 
