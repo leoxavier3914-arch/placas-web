@@ -1,5 +1,10 @@
-export const normalizePlate = (s: string) =>
-  s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+export const normalizePlate = (s: string): string | null => {
+  const plate = s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (plate.length !== 7) return null;
+  const classic = /^[A-Z]{3}\d{4}$/.test(plate);
+  const mercosul = /^[A-Z]{3}\d[A-Z]\d{2}$/.test(plate);
+  return classic || mercosul ? plate : null;
+};
 
 export const onlyDigits = (s: string) => s.replace(/\D/g, '');
 

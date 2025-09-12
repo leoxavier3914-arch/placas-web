@@ -8,6 +8,12 @@ export const revalidate = 0;
 
 export async function GET(_: Request, { params }: { params: { plate: string } }) {
   const plate = normalizePlate(params.plate);
+  if (!plate) {
+    return NextResponse.json(
+      { ok: false, error: 'Placa inválida.' },
+      { status: 400 }
+    );
+  }
   const companyId = getCompanyId();
   if (process.env.NODE_ENV !== 'production') {
     console.log('lookup', companyId, plate);
