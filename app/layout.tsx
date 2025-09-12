@@ -1,11 +1,14 @@
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Toast from "@/components/Toast";
+import { Roboto } from "next/font/google";
+
+const roboto = Roboto({ subsets: ["latin"], weight: "400" });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="flex min-h-screen flex-col">
+      <body className={`${roboto.className} flex min-h-screen flex-col`}>
         {/* Barra de navegação */}
         <Nav />
         {/* Contêiner de toasts */}
