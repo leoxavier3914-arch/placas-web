@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+ 
+import { getCompanyId } from '@/lib/env';
+import { getValidationErrorMsg } from '@/lib/validation';
+
 import env from '@/lib/env';
+ 
 import { z } from 'zod';
 import { parseJsonSafe } from '@/lib/api';
 
@@ -38,13 +43,10 @@ export async function POST(req: Request) {
     const body = await parseJsonSafe(req).catch(() => null);
     const parsed = personSchema.safeParse(body);
     if (!parsed.success) {
-      const invalid =
-        parsed.error.errors.length === 1 &&
-        parsed.error.errors[0].path.length === 0;
-      const msg = invalid
-        ? 'Requisição inválida (corpo ausente ou inválido).'
-        : parsed.error.errors.map((e) => e.message).join(' ');
-      return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: getValidationErrorMsg(parsed) },
+        { status: 400 }
+      );
     }
 
     const { full_name, doc_number, phone, email, notes } = parsed.data;
