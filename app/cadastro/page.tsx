@@ -37,7 +37,7 @@ export default function CadastroPage() {
   const loadPeople = async () => {
     try {
       const res = await fetch('/api/people', { cache: 'no-store' });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (res.ok && json?.data) setPeople(json.data);
     } catch (e) {
       logError('loadPeople', e);
@@ -48,7 +48,7 @@ export default function CadastroPage() {
   const loadVehicles = async () => {
     try {
       const res = await fetch('/api/vehicles', { cache: 'no-store' });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (res.ok && json?.data) setVehicles(json.data);
     } catch (e) {
       logError('loadVehicles', e);
@@ -59,7 +59,7 @@ export default function CadastroPage() {
   const loadVehiclePeople = async () => {
     try {
       const res = await fetch('/api/vehicle-people', { cache: 'no-store' });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (res.ok && json?.data) {
         const map: Record<string, any[]> = {};
         json.data.forEach((vp: any) => {
@@ -202,7 +202,7 @@ export default function CadastroPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleId, personId }),
       });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao vincular.');
         return;
@@ -222,7 +222,7 @@ export default function CadastroPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleId, personId }),
       });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao desvincular.');
         return;
@@ -249,7 +249,7 @@ export default function CadastroPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plate, model, color }),
       });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao editar.');
         return;
@@ -265,7 +265,7 @@ export default function CadastroPage() {
     if (!confirm('Deseja excluir este veículo?')) return;
     try {
       const res = await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
-      const json = await res.json().catch(() => null);
+      const json = await parseJsonSafe(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao excluir.');
         return;
