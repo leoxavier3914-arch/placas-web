@@ -21,7 +21,6 @@ export default function CadastroPage() {
   const [pPhone, setPPhone] = useState('');
   const [pEmail, setPEmail] = useState('');
   const [pNotes, setPNotes] = useState('');
-  const [pPlate, setPPlate] = useState('');
   const [pLoading, setPLoading] = useState(false);
 
   // Veículo
@@ -33,6 +32,9 @@ export default function CadastroPage() {
   // listas
   const [people, setPeople] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehiclePeople, setVehiclePeople] = useState<Record<string, any[]>>({});
+  const [expandedVehicles, setExpandedVehicles] = useState<string[]>([]);
+  const [linkSelection, setLinkSelection] = useState<Record<string, string>>({});
 
   const loadPeople = async () => {
     try {
@@ -50,39 +52,34 @@ export default function CadastroPage() {
     } catch {}
   };
 
+  const loadVehiclePeople = async () => {
+    try {
+      const res = await fetch('/api/vehicle-people', { cache: 'no-store' });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.data) {
+        const map: Record<string, any[]> = {};
+        json.data.forEach((vp: any) => {
+          if (!map[vp.vehicleId]) map[vp.vehicleId] = [];
+          map[vp.vehicleId].push(vp);
+        });
+        setVehiclePeople(map);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     loadPeople();
     loadVehicles();
+    loadVehiclePeople();
   }, []);
 
   const submitPessoa = async () => {
-    const plate = normalizePlate(pPlate);
     if (!pFullName.trim()) {
       alert('Nome completo é obrigatório');
       return;
     }
-    if (!plate) {
-      alert('Placa é obrigatória');
-      return;
-    }
     setPLoading(true);
     try {
-      let vehicle = vehicles.find((v) => v.plate === plate);
-      if (!vehicle) {
-        const resVehicle = await fetch('/api/vehicles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plate }),
-        });
-        const jsonVehicle = (await parseJsonSafe(resVehicle)) as ApiResp<any>;
-        if (!jsonVehicle.ok) {
-          alert(jsonVehicle.error);
-          return;
-        }
-        vehicle = jsonVehicle.data;
-        await loadVehicles();
-      }
-
       const res = await fetch('/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,27 +98,13 @@ export default function CadastroPage() {
         return;
       }
 
-      const person = json.data;
-      const resLink = await fetch('/api/vehicle-people', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId: vehicle.id, personId: person.id }),
-      });
-      const jsonLink = (await parseJsonSafe(resLink)) as ApiResp<any>;
-      if (!jsonLink.ok) {
-        alert(jsonLink.error);
-        return;
-      }
-
       alert('Pessoa cadastrada com sucesso!');
       setPFullName('');
       setPDoc('');
       setPPhone('');
       setPEmail('');
       setPNotes('');
-      setPPlate('');
       await loadPeople();
-      await loadVehicles();
     } catch (e: any) {
       alert(`Falha: ${e?.message ?? e}`);
     } finally {
@@ -164,6 +147,99 @@ export default function CadastroPage() {
     }
   };
 
+  const toggleExpand = (id: string) => {
+    setExpandedVehicles((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+    );
+  };
+
+  const linkPerson = async (vehicleId: string) => {
+    const personId = linkSelection[vehicleId];
+    if (!personId) {
+      alert('Selecione uma pessoa');
+      return;
+    }
+    try {
+      const res = await fetch('/api/vehicle-people', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId, personId }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        alert(json?.error || 'Falha ao vincular.');
+        return;
+      }
+      setLinkSelection((s) => ({ ...s, [vehicleId]: '' }));
+      await loadVehiclePeople();
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    }
+  };
+
+  const unlinkPerson = async (vehicleId: string, personId: string) => {
+    if (!confirm('Desvincular este condutor?')) return;
+    try {
+      const res = await fetch('/api/vehicle-people', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId, personId }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        alert(json?.error || 'Falha ao desvincular.');
+        return;
+      }
+      await loadVehiclePeople();
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    }
+  };
+
+  const editVehicle = async (v: any) => {
+    const plateInput = prompt('Placa', v.plate);
+    if (!plateInput) return;
+    const plate = normalizePlate(plateInput);
+    if (!plate) {
+      alert('Placa inválida');
+      return;
+    }
+    const model = prompt('Modelo', v.model || '') || null;
+    const color = prompt('Cor', v.color || '') || null;
+    try {
+      const res = await fetch(`/api/vehicles/${v.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plate, model, color }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        alert(json?.error || 'Falha ao editar.');
+        return;
+      }
+      await loadVehicles();
+      await loadVehiclePeople();
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    }
+  };
+
+  const deleteVehicle = async (id: string) => {
+    if (!confirm('Deseja excluir este veículo?')) return;
+    try {
+      const res = await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        alert(json?.error || 'Falha ao excluir.');
+        return;
+      }
+      await loadVehicles();
+      await loadVehiclePeople();
+    } catch (e: any) {
+      alert(e?.message ?? e);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Cadastros</h1>
@@ -189,21 +265,6 @@ export default function CadastroPage() {
               onChange={(e) => setPDoc(e.target.value)}
               placeholder="Ex.: 12345678900"
             />
-          </div>
-          <div>
-            <label className="block text-sm">Placa *</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={pPlate}
-              onChange={(e) => setPPlate(e.target.value.toUpperCase())}
-              list="plates-list"
-              placeholder="Ex.: ABC1D23"
-            />
-            <datalist id="plates-list">
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.plate} />
-              ))}
-            </datalist>
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
@@ -313,16 +374,93 @@ export default function CadastroPage() {
           {vehicles.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhum veículo cadastrado.</p>
           ) : (
-            <ul className="divide-y">
+            <div className="space-y-4">
               {vehicles.map((v) => (
-                <li key={v.id} className="py-2 text-sm">
-                  <span className="font-medium">{v.plate}</span>
-                  {v.model && (
-                    <span className="text-gray-600"> — {v.model}</span>
+                <div key={v.id} className="rounded border p-4">
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => toggleExpand(v.id)}
+                  >
+                    <span className="font-medium">{v.plate}</span>
+                    {v.model && (
+                      <span className="text-gray-600"> — {v.model}</span>
+                    )}
+                    {v.color && (
+                      <span className="text-gray-600"> ({v.color})</span>
+                    )}
+                  </div>
+                  {expandedVehicles.includes(v.id) && (
+                    <div className="mt-3 space-y-2">
+                      <div>
+                        {vehiclePeople[v.id]?.length ? (
+                          <ul className="space-y-1">
+                            {vehiclePeople[v.id].map((vp: any) => (
+                              <li
+                                key={vp.personId}
+                                className="flex justify-between text-sm"
+                              >
+                                <span>{vp.person.full_name}</span>
+                                <button
+                                  className="text-red-600"
+                                  onClick={() =>
+                                    unlinkPerson(v.id, vp.personId)
+                                  }
+                                >
+                                  Desvincular
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            Nenhum condutor vinculado.
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <select
+                          className="flex-1 rounded border px-2 py-1"
+                          value={linkSelection[v.id] || ''}
+                          onChange={(e) =>
+                            setLinkSelection((s) => ({
+                              ...s,
+                              [v.id]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Selecionar pessoa</option>
+                          {people.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.full_name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => linkPerson(v.id)}
+                          className="rounded bg-green-600 px-2 py-1 text-white text-sm"
+                        >
+                          Vincular
+                        </button>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={() => editVehicle(v)}
+                          className="rounded bg-blue-600 px-3 py-1 text-white text-sm"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => deleteVehicle(v.id)}
+                          className="rounded bg-red-600 px-3 py-1 text-white text-sm"
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>
