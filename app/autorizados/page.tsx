@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
-import { toast } from '@/components/Toast';
+import { toast } from 'react-hot-toast';
 
 export default function AutorizadosPage() {
   const [plate, setPlate] = useState('');

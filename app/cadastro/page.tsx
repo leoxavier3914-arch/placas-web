@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { normalizePlate, logError } from '@/lib/utils';
-import { toast } from '@/components/Toast';
+import { toast } from 'react-hot-toast';
 import { parseJsonSafe } from '@/lib/api';
 
 type ApiResp<T> = { ok: true; data: T } | { ok: false; error: string };
