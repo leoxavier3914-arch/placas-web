@@ -21,6 +21,7 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
 
   const supabaseAdmin = getSupabaseAdmin();
 
+
   // Query vehicle with related people and authorized plate in parallel
   const [{ data: vehicle, error: vehicleErr }, { data: authorized, error: authErr }] =
     await Promise.all([
@@ -37,6 +38,7 @@ export async function GET(_: Request, { params }: { params: { plate: string } })
         .eq('plate', plate)
         .maybeSingle(),
     ]);
+
 
   if (vehicleErr)
     return NextResponse.json({ ok: false, error: vehicleErr.message }, { status: 400 });
