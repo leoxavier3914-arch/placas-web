@@ -69,7 +69,7 @@ export default function Home() {
         return;
       }
       if (json.type === 'registered') {
-        const open = (json.visits || []).find((v) => !v.checkout_time);
+        const open = (json.visits || []).find((v: any) => !v.checkout_time);
         if (open) {
           toast.error('Placa já possui entrada em andamento.');
           return;
@@ -90,19 +90,17 @@ export default function Home() {
         return;
       }
       setPendingPlate(plate);
- 
-      } catch (e) {
-        if (e instanceof Error && e.name === 'AbortError') {
-          toast.error('Tempo de consulta esgotado. Tente novamente.');
-        } else {
-          const msg = e instanceof Error ? e.message : String(e);
-          toast.error(msg);
-        }
-      } finally {
-        setChecking(false);
-
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') {
+        toast.error('Tempo de consulta esgotado. Tente novamente.');
+      } else {
+        const msg = e instanceof Error ? e.message : String(e);
+        toast.error(msg);
       }
-    };
+    } finally {
+      setVerificando(false);
+    }
+  };
 
 
   const onCheckout = async (visitId: string) => {
@@ -142,7 +140,7 @@ export default function Home() {
             onClick={onVerify}
             disabled={verificando}
             className="w-full max-w-xs rounded bg-green-600 px-4 py-2 text-white disabled:opacity-50"
-          
+          >
             {verificando ? 'Verificando…' : 'Verificar'}
           </button>
  
