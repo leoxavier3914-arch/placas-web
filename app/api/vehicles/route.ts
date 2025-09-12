@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { normalizePlate } from '@/lib/utils';
-import { getCompanyId } from '@/lib/env';
+import env from '@/lib/env';
 import { z } from 'zod';
 
 const vehicleSchema = z.object({
@@ -17,7 +17,7 @@ const vehicleSchema = z.object({
 
 export async function GET() {
   try {
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('vehicles')
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     const { plate, model, color } = parsed.data;
 
-    const companyId = getCompanyId();
+    const companyId = env.COMPANY_ID;
     const insert = {
       company_id: companyId,
       plate,

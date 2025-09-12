@@ -1,8 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GET as openGET } from '@/app/api/visits/open/route';
-import { POST as checkinPOST } from '@/app/api/visits/checkin/route';
-import { GET as historyGET } from '@/app/api/visits/history/route';
-import { POST as checkoutPOST } from '@/app/api/visits/[id]/checkout/route';
 
 const supabaseMock: any = {
   from: vi.fn(),
@@ -13,11 +9,22 @@ vi.mock('@/lib/supabaseAdmin', () => ({
 }));
 
 vi.mock('@/lib/env', () => ({
-  getCompanyId: () => 'company-1',
+  default: {
+    COMPANY_ID: 'company-1',
+    DEFAULT_BRANCH_ID: 'branch-1',
+    NEXT_PUBLIC_SUPABASE_URL: 'url',
+    SUPABASE_SERVICE_ROLE_KEY: 'key',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+    NODE_ENV: 'test',
+  },
 }));
 
+import { GET as openGET } from '@/app/api/visits/open/route';
+import { POST as checkinPOST } from '@/app/api/visits/checkin/route';
+import { GET as historyGET } from '@/app/api/visits/history/route';
+import { POST as checkoutPOST } from '@/app/api/visits/[id]/checkout/route';
+
 beforeEach(() => {
-  process.env.DEFAULT_BRANCH_ID = 'branch-1';
   supabaseMock.from.mockReset();
 });
 
