@@ -7,6 +7,7 @@ import { parseJsonSafe, apiFetch } from '@/lib/api';
 import PersonForm from '@/components/PersonForm';
 import VehicleForm from '@/components/VehicleForm';
 import { Person, Vehicle } from '@/types';
+import PersonAvatar from '@/components/PersonAvatar';
 
 export default function VisitantesPage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -14,6 +15,7 @@ export default function VisitantesPage() {
   const [showOptions, setShowOptions] = useState(false);
   const [showPerson, setShowPerson] = useState(false);
   const [showVehicle, setShowVehicle] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const loadPeople = async () => {
     try {
@@ -63,11 +65,22 @@ export default function VisitantesPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {people.map((p) => (
-            <div key={p.id} className="rounded-lg bg-white p-4 shadow">
-              <p className="font-medium">{p.full_name}</p>
-              {p.doc_number && (
-                <p className="text-sm text-gray-600">{p.doc_number}</p>
-              )}
+            <div
+              key={p.id}
+              className="flex items-center justify-between rounded-lg bg-white p-4 shadow"
+            >
+              <div
+                className="flex-1 cursor-pointer"
+                onClick={() =>
+                  setExpandedId(expandedId === p.id ? null : p.id)
+                }
+              >
+                <p className="font-medium">{p.full_name}</p>
+                {expandedId === p.id && p.doc_number && (
+                  <p className="text-sm text-gray-600">{p.doc_number}</p>
+                )}
+              </div>
+              <PersonAvatar person={p} onUpdated={reloadData} />
             </div>
           ))}
         </div>

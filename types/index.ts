@@ -5,6 +5,7 @@ export interface Person {
   phone: string | null;
   email: string | null;
   notes: string | null;
+  photo_url: string | null;
 }
 
 export interface Vehicle {
