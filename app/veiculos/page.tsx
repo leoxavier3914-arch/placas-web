@@ -65,11 +65,11 @@ export default function VeiculosPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Veículos</h1>
+      <h1 className="text-2xl font-semibold">Veículos</h1>
       {vehicles.length === 0 ? (
         <p className="text-sm text-gray-500">Nenhum veículo cadastrado.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {vehicles.map((v) => (
             <VehicleCard
               key={v.id}
