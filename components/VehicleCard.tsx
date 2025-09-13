@@ -81,11 +81,17 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
   };
 
   return (
-    <div className="rounded border p-4">
-      <div className="cursor-pointer" onClick={() => setExpanded((v) => !v)}>
-        <span className="font-medium">{vehicle.plate}</span>
-        {vehicle.model && <span className="text-gray-600"> — {vehicle.model}</span>}
-        {vehicle.color && <span className="text-gray-600"> ({vehicle.color})</span>}
+    <div className="rounded-lg bg-white p-4 shadow">
+      <div
+        className="flex cursor-pointer items-center justify-between"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <div>
+          <span className="font-semibold">{vehicle.plate}</span>
+          {vehicle.model && <span className="text-gray-600"> — {vehicle.model}</span>}
+          {vehicle.color && <span className="text-gray-600"> ({vehicle.color})</span>}
+        </div>
+        <span className="text-lg">{expanded ? "−" : "+"}</span>
       </div>
       {expanded && (
         <div className="mt-3 space-y-2">

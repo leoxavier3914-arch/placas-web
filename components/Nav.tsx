@@ -25,7 +25,8 @@ export default function Nav() {
           key={href}
           href={href}
           aria-current={active ? "page" : undefined}
-          className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
+          onClick={() => setOpen(false)}
+          className={`block rounded px-3 py-2 text-sm font-medium transition-colors ${
             active ? "bg-white/20" : "hover:bg-white/10"
           }`}
         >
@@ -35,26 +36,37 @@ export default function Nav() {
     });
 
   return (
-    <nav className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow">
-      <div className="mx-auto max-w-5xl p-4">
-        <div className="flex items-center justify-between md:justify-center">
+    <>
+      <nav className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow">
+        <div className="mx-auto max-w-5xl p-4">
           <button
-            onClick={() => setOpen((v) => !v)}
-            className="space-y-1 md:hidden"
+            onClick={() => setOpen(true)}
+            className="space-y-1"
             aria-label="Abrir menu"
           >
             <span className="block h-0.5 w-6 bg-white"></span>
             <span className="block h-0.5 w-6 bg-white"></span>
             <span className="block h-0.5 w-6 bg-white"></span>
           </button>
-          <div className="hidden gap-6 md:flex">{renderLinks()}</div>
         </div>
-        {open && (
-          <div className="mt-4 flex flex-col items-center gap-4 md:hidden">
-            {renderLinks()}
+      </nav>
+      {open && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="w-64 bg-gradient-to-b from-blue-600 to-blue-800 p-6 text-white shadow-lg">
+            <div className="mb-6 flex justify-end">
+              <button onClick={() => setOpen(false)} aria-label="Fechar menu">
+                ✕
+              </button>
+            </div>
+            <div className="flex flex-col gap-2">{renderLinks()}</div>
           </div>
-        )}
-      </div>
-    </nav>
+          <div
+            className="flex-1 bg-black/50"
+            onClick={() => setOpen(false)}
+          ></div>
+        </div>
+      )}
+    </>
   );
 }
+

@@ -26,18 +26,20 @@ export default function VisitantesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Visitantes</h1>
+      <h1 className="text-2xl font-semibold">Visitantes</h1>
       {people.length === 0 ? (
         <p className="text-sm text-gray-500">Nenhuma pessoa cadastrada.</p>
       ) : (
-        <ul className="divide-y">
+        <div className="grid gap-4 sm:grid-cols-2">
           {people.map((p) => (
-            <li key={p.id} className="py-2 text-sm">
-              <span className="font-medium">{p.full_name}</span>
-              {p.doc_number && <span className="text-gray-600"> — {p.doc_number}</span>}
-            </li>
+            <div key={p.id} className="rounded-lg bg-white p-4 shadow">
+              <p className="font-medium">{p.full_name}</p>
+              {p.doc_number && (
+                <p className="text-sm text-gray-600">{p.doc_number}</p>
+              )}
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
