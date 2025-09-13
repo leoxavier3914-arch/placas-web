@@ -18,6 +18,7 @@ vi.mock('@/lib/env', () => ({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
     NODE_ENV: 'test',
   },
+  getCompanyId: () => 'company-1',
 }));
 
 process.env.DEFAULT_BRANCH_ID = 'branch-1';
