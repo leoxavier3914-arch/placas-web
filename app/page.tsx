@@ -33,7 +33,12 @@ export default function Home() {
   const loadOpenVisits = async () => {
     setLoadingVisits(true);
     try {
-      const res = await fetch('/api/visits/open', { cache: 'no-store' });
+      const res = await fetch('/api/visits/open', {
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
+      });
       const json = await parseJsonSafe(res);
       if (json.ok) setOpenVisits(json.data || []);
     } finally {
@@ -61,6 +66,9 @@ export default function Home() {
       const res = await fetch(`/api/lookup/plate/${plate}`, {
         cache: 'no-store',
         signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
       });
       clearTimeout(timeout);
       const json = await parseJsonSafe(res);
@@ -110,6 +118,9 @@ export default function Home() {
       const res = await fetch(`/api/visits/${visitId}/checkout`, {
         method: 'POST',
         cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
       });
       const json = await parseJsonSafe(res);
       if (!json.ok) {
