@@ -11,8 +11,10 @@ interface Props {
 }
 
 export default function PersonAvatar({ person, onUpdated }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,7 +47,8 @@ export default function PersonAvatar({ person, onUpdated }: Props) {
       toast.error('Falha ao enviar foto.');
     } finally {
       setLoading(false);
-      if (fileRef.current) fileRef.current.value = '';
+      if (galleryRef.current) galleryRef.current.value = '';
+      if (cameraRef.current) cameraRef.current.value = '';
     }
   };
 
@@ -56,24 +59,65 @@ export default function PersonAvatar({ person, onUpdated }: Props) {
           src={person.photo_url}
           alt={person.full_name}
           className="h-16 w-16 cursor-pointer rounded-full object-cover"
-          onClick={() => !loading && fileRef.current?.click()}
+          onClick={() => !loading && setShowOptions(true)}
         />
       ) : (
         <div
           className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-2xl text-gray-500"
-          onClick={() => !loading && fileRef.current?.click()}
+          onClick={() => !loading && setShowOptions(true)}
         >
           {loading ? '...' : '+'}
         </div>
       )}
       <input
-        ref={fileRef}
+        ref={galleryRef}
         type="file"
         accept="image/*"
         className="hidden"
         onChange={handleFile}
         disabled={loading}
       />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFile}
+        disabled={loading}
+      />
+      {showOptions && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+          <div className="w-64 space-y-3 rounded bg-white p-4">
+            <button
+              onClick={() => {
+                cameraRef.current?.click();
+                setShowOptions(false);
+              }}
+              className="w-full rounded bg-blue-600 px-4 py-2 text-white"
+            >
+              Tirar Foto
+            </button>
+            <button
+              onClick={() => {
+                galleryRef.current?.click();
+                setShowOptions(false);
+              }}
+              className="w-full rounded bg-green-600 px-4 py-2 text-white"
+            >
+              Galeria
+            </button>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowOptions(false)}
+                className="rounded border px-3 py-2"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
