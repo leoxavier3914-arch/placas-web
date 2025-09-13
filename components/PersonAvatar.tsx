@@ -24,9 +24,11 @@ export default function PersonAvatar({ person, onUpdated }: Props) {
       const { supabase } = await import('@/lib/supabaseClient');
       const ext = file.name.split('.').pop();
       const filePath = `${person.id}-${Date.now()}.${ext}`;
+      const options: { upsert: boolean; contentType?: string } = { upsert: true };
+      if (file.type) options.contentType = file.type;
       const { error: uploadError } = await supabase.storage
         .from('people')
-        .upload(filePath, file, { upsert: true, contentType: file.type });
+        .upload(filePath, file, options);
       if (uploadError) throw uploadError;
       const { data } = supabase.storage.from('people').getPublicUrl(filePath);
       const photoUrl = data.publicUrl;
