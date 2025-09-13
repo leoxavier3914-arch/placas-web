@@ -36,7 +36,7 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
       });
       const jsonP = await parseJsonSafe(resP);
       if (!jsonP.ok) {
-        toast.error(jsonP.error || 'Falha ao cadastrar pessoa.');
+        toast.error(jsonP.error || 'Falha ao cadastrar visitante.');
         return;
       }
       const personId = jsonP.data.id;
@@ -59,7 +59,7 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
       });
       const jsonLink = await parseJsonSafe(resLink);
       if (!jsonLink.ok) {
-        toast.error(jsonLink.error || 'Falha ao vincular pessoa.');
+        toast.error(jsonLink.error || 'Falha ao vincular visitante.');
         return;
       }
 

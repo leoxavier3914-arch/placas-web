@@ -32,7 +32,7 @@ export default function ConfirmModal({ vehicle, initialPeople, onClose, onSucces
 
   const onEntryConfirm = async () => {
     if (!selectedPersonId) {
-      toast.error('Selecione uma pessoa vinculada.');
+      toast.error('Selecione um visitante vinculado.');
       return;
     }
     setEntering(true);
@@ -91,7 +91,7 @@ export default function ConfirmModal({ vehicle, initialPeople, onClose, onSucces
               ))}
             </select>
           ) : (
-            <p className="text-sm text-gray-500">Nenhuma pessoa vinculada.</p>
+            <p className="text-sm text-gray-500">Nenhum visitante vinculado.</p>
           )}
         </div>
         <div>
