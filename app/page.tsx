@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import OpenVisitsTable, { OpenVisit } from '@/components/OpenVisitsTable';
 import RegisterModal from '@/components/RegisterModal';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -34,7 +34,7 @@ export default function Home() {
     setLoadingVisits(true);
     try {
  
-      const res = await fetch('/api/visits/open', { cache: 'no-store' });
+      const res = await apiFetch('/api/visits/open', { cache: 'no-store' });
       if (res.status === 401) {
         toast.error('Não autorizado');
         return;
@@ -63,12 +63,9 @@ export default function Home() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
-      const res = await fetch(`/api/lookup/plate/${plate}`, {
+      const res = await apiFetch(`/api/lookup/plate/${plate}`, {
         cache: 'no-store',
         signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-        },
       });
       clearTimeout(timeout);
       if (res.status === 401) {
@@ -121,12 +118,9 @@ export default function Home() {
     setOpenVisits((prev) => prev.filter((v) => v.id !== visitId));
     let unauthorized = false;
     try {
-      const res = await fetch(`/api/visits/${visitId}/checkout`, {
+      const res = await apiFetch(`/api/visits/${visitId}/checkout`, {
         method: 'POST',
         cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-        },
       });
       if (res.status === 401) {
         toast.error('Não autorizado');

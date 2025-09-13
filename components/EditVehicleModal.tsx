@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
 interface Vehicle {
@@ -32,7 +32,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSuccess }: Props)
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/vehicles/${vehicle.id}`, {
+      const res = await apiFetch(`/api/vehicles/${vehicle.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plate: p, model: model.trim() || null, color: color.trim() || null }),

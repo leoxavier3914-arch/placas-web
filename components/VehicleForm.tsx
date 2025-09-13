@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import { Vehicle } from '@/types';
 
 interface Props {
@@ -24,7 +24,7 @@ export default function VehicleForm({ onSaved }: Props) {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/vehicles', {
+      const res = await apiFetch('/api/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
 interface Vehicle {
@@ -37,7 +37,7 @@ export default function ConfirmModal({ vehicle, initialPeople, onClose, onSucces
     }
     setEntering(true);
     try {
-      const resCheck = await fetch('/api/visits/checkin', {
+      const resCheck = await apiFetch('/api/visits/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

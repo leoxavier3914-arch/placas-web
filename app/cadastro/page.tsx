@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { logError } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import PersonForm from '@/components/PersonForm';
 import VehicleForm from '@/components/VehicleForm';
 import VehicleCard from '@/components/VehicleCard';
@@ -16,7 +16,7 @@ export default function CadastroPage() {
 
   const loadPeople = async () => {
     try {
-      const res = await fetch('/api/people', { cache: 'no-store' });
+      const res = await apiFetch('/api/people', { cache: 'no-store' });
       const json = await parseJsonSafe<{ data?: Person[] }>(res).catch(() => null);
       if (res.ok && json?.data) setPeople(json.data);
     } catch (e) {
@@ -27,7 +27,7 @@ export default function CadastroPage() {
 
   const loadVehicles = async () => {
     try {
-      const res = await fetch('/api/vehicles', { cache: 'no-store' });
+      const res = await apiFetch('/api/vehicles', { cache: 'no-store' });
       const json = await parseJsonSafe<{ data?: Vehicle[] }>(res).catch(() => null);
       if (res.ok && json?.data) setVehicles(json.data);
     } catch (e) {
@@ -38,7 +38,7 @@ export default function CadastroPage() {
 
   const loadVehiclePeople = async () => {
     try {
-      const res = await fetch('/api/vehicle-people', { cache: 'no-store' });
+      const res = await apiFetch('/api/vehicle-people', { cache: 'no-store' });
       const json = await parseJsonSafe<{ data?: VehiclePerson[] }>(res).catch(() => null);
       if (res.ok && json?.data) {
         const map: Record<string, VehiclePerson[]> = {};

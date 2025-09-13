@@ -11,3 +11,12 @@ export async function parseJsonSafe<T = any>(
   }
   return res.json();
 }
+
+export function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const headers = new Headers(init.headers as HeadersInit);
+  if (!headers.has('Authorization')) {
+    const token = process.env.NEXT_PUBLIC_API_TOKEN;
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+  return fetch(input, { ...init, headers });
+}
