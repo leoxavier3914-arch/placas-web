@@ -11,6 +11,8 @@ export default function Nav() {
   const links = [
     { href: "/", label: "Início" },
     { href: "/cadastro", label: "Cadastros" },
+    { href: "/veiculos", label: "Veículos" },
+    { href: "/visitantes", label: "Visitantes" },
     { href: "/autorizados", label: "Autorizados" },
     { href: "/historico", label: "Histórico" },
   ];
