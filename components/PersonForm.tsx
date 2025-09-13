@@ -14,12 +14,8 @@ interface Props {
 export default function PersonForm({ vehicles, onSaved }: Props) {
   const [fullName, setFullName] = useState('');
   const [doc, setDoc] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [plate, setPlate] = useState('');
-  const [model, setModel] = useState('');
-  const [color, setColor] = useState('');
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
@@ -28,34 +24,31 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
       return;
     }
     const nPlate = normalizePlate(plate);
-    if (!nPlate) {
-      toast.error('Informe a placa (ex.: ABC1D23)');
+    if (plate.trim() && !nPlate) {
+      toast.error('Informe a placa no formato válido (ex.: ABC1D23)');
       return;
     }
     setLoading(true);
     try {
-      let vehicle = vehicles.find((v) => v.plate === nPlate);
-      if (!vehicle) {
-        const resVehicle = await apiFetch('/api/vehicles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            plate: nPlate,
-            model: model.trim() || null,
-            color: color.trim() || null,
-          }),
-        });
-        const jsonVehicle = await parseJsonSafe<{
-          ok: boolean;
-          data: Vehicle;
-          error?: string;
-        }>(resVehicle);
-        if (!jsonVehicle.ok) {
-          toast.error(jsonVehicle.error || 'Falha ao cadastrar veículo.');
-          return;
+      if (nPlate) {
+        let vehicle = vehicles.find((v) => v.plate === nPlate);
+        if (!vehicle) {
+          const resVehicle = await apiFetch('/api/vehicles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plate: nPlate }),
+          });
+          const jsonVehicle = await parseJsonSafe<{
+            ok: boolean;
+            data: Vehicle;
+            error?: string;
+          }>(resVehicle);
+          if (!jsonVehicle.ok) {
+            toast.error(jsonVehicle.error || 'Falha ao cadastrar veículo.');
+            return;
+          }
+          await onSaved();
         }
-        vehicle = jsonVehicle.data;
-        await onSaved();
       }
 
       const res = await apiFetch('/api/people', {
@@ -64,8 +57,6 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
         body: JSON.stringify({
           full_name: fullName.trim(),
           doc_number: doc.trim() || null,
-          phone: phone.trim() || null,
-          email: email.trim() || null,
           notes: notes.trim() || null,
         }),
       });
@@ -81,12 +72,8 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
       toast.success('Pessoa cadastrada com sucesso!');
       setFullName('');
       setDoc('');
-      setPhone('');
-      setEmail('');
       setNotes('');
       setPlate('');
-      setModel('');
-      setColor('');
       await onSaved();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -110,7 +97,16 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
           />
         </div>
         <div>
-          <label className="block text-sm">Placa *</label>
+          <label className="block text-sm">Documento (opcional)</label>
+          <input
+            className="w-full rounded border px-3 py-2"
+            value={doc}
+            onChange={(e) => setDoc(e.target.value)}
+            placeholder="Ex.: 12345678900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm">Placa (opcional)</label>
           <input
             className="w-full rounded border px-3 py-2"
             value={plate}
@@ -123,47 +119,6 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
               <option key={v.id} value={v.plate} />
             ))}
           </datalist>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="block text-sm">Modelo (opcional)</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="Ex.: Caminhão"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm">Cor (opcional)</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              placeholder="Ex.: Branco"
-            />
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="block text-sm">Telefone (opcional)</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Ex.: (11) 90000-0000"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm">E-mail (opcional)</label>
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ex.: joao@email.com"
-              type="email"
-            />
-          </div>
         </div>
         <div>
           <label className="block text-sm">Observações (opcional)</label>
