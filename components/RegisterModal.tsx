@@ -12,51 +12,61 @@ interface Props {
 
 export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
   const [name, setName] = useState('');
+  const [doc, setDoc] = useState('');
+  const [model, setModel] = useState('');
+  const [color, setColor] = useState('');
+  const [purpose, setPurpose] = useState('despacho');
   const [loading, setLoading] = useState(false);
 
   const onRegister = async () => {
+    if (!name.trim()) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
+    if (!doc.trim()) {
+      toast.error('Documento é obrigatório');
+      return;
+    }
     setLoading(true);
     try {
-      let personId: string | null = null;
-      if (name.trim()) {
-        const resP = await apiFetch('/api/people', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ full_name: name.trim() }),
-        });
-        const jsonP = await parseJsonSafe(resP);
-        if (!jsonP.ok) {
-          toast.error(jsonP.error || 'Falha ao cadastrar pessoa.');
-          return;
-        }
-        personId = jsonP.data.id;
+      const resP = await apiFetch('/api/people', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: name.trim(), doc_number: doc.trim() }),
+      });
+      const jsonP = await parseJsonSafe(resP);
+      if (!jsonP.ok) {
+        toast.error(jsonP.error || 'Falha ao cadastrar pessoa.');
+        return;
       }
+      const personId = jsonP.data.id;
+
       const resV = await apiFetch('/api/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plate }),
+        body: JSON.stringify({ plate, model: model.trim() || null, color: color.trim() || null }),
       });
       const jsonV = await parseJsonSafe(resV);
       if (!jsonV.ok) {
         toast.error(jsonV.error || 'Falha ao cadastrar veículo.');
         return;
       }
-      if (personId) {
-        const resLink = await apiFetch('/api/vehicle-people', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vehicleId: jsonV.data.id, personId }),
-        });
-        const jsonLink = await parseJsonSafe(resLink);
-        if (!jsonLink.ok) {
-          toast.error(jsonLink.error || 'Falha ao vincular pessoa.');
-          return;
-        }
+
+      const resLink = await apiFetch('/api/vehicle-people', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicleId: jsonV.data.id, personId }),
+      });
+      const jsonLink = await parseJsonSafe(resLink);
+      if (!jsonLink.ok) {
+        toast.error(jsonLink.error || 'Falha ao vincular pessoa.');
+        return;
       }
+
       const resC = await apiFetch('/api/visits/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId: jsonV.data.id, personId, purpose: 'despacho' }),
+        body: JSON.stringify({ vehicleId: jsonV.data.id, personId, purpose }),
       });
       const jsonC = await parseJsonSafe(resC);
       if (!jsonC.ok) {
@@ -64,6 +74,10 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
         return;
       }
       setName('');
+      setDoc('');
+      setModel('');
+      setColor('');
+      setPurpose('despacho');
       onSuccess();
     } catch (e: any) {
       toast.error(e?.message ?? e);
@@ -81,12 +95,47 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
           <input className="w-full rounded border px-3 py-2" value={plate} disabled />
         </div>
         <div>
-          <label className="block text-sm">Nome (opcional)</label>
+          <label className="block text-sm">Nome *</label>
           <input
             className="w-full rounded border px-3 py-2"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+        </div>
+        <div>
+          <label className="block text-sm">Documento *</label>
+          <input
+            className="w-full rounded border px-3 py-2"
+            value={doc}
+            onChange={(e) => setDoc(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm">Modelo (opcional)</label>
+          <input
+            className="w-full rounded border px-3 py-2"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm">Cor (opcional)</label>
+          <input
+            className="w-full rounded border px-3 py-2"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm">Finalidade</label>
+          <select
+            className="w-full rounded border px-3 py-2"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+          >
+            <option value="despacho">Despacho</option>
+            <option value="retirada">Retiro</option>
+          </select>
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={onClose} className="rounded border px-3 py-2" disabled={loading}>
