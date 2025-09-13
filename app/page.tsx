@@ -33,6 +33,7 @@ export default function Home() {
   const loadOpenVisits = async () => {
     setLoadingVisits(true);
     try {
+ 
       const res = await fetch('/api/visits/open', { cache: 'no-store' });
       if (res.status === 401) {
         toast.error('Não autorizado');
@@ -65,6 +66,9 @@ export default function Home() {
       const res = await fetch(`/api/lookup/plate/${plate}`, {
         cache: 'no-store',
         signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
       });
       clearTimeout(timeout);
       if (res.status === 401) {
@@ -120,6 +124,9 @@ export default function Home() {
       const res = await fetch(`/api/visits/${visitId}/checkout`, {
         method: 'POST',
         cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
       });
       if (res.status === 401) {
         toast.error('Não autorizado');
