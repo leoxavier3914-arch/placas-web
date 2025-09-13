@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import { Person, Vehicle } from '@/types';
 
 interface Props {
@@ -36,7 +36,7 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
     try {
       let vehicle = vehicles.find((v) => v.plate === nPlate);
       if (!vehicle) {
-        const resVehicle = await fetch('/api/vehicles', {
+        const resVehicle = await apiFetch('/api/vehicles', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -58,7 +58,7 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
         await onSaved();
       }
 
-      const res = await fetch('/api/people', {
+      const res = await apiFetch('/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
