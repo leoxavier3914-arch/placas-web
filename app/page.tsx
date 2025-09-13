@@ -34,6 +34,10 @@ export default function Home() {
     setLoadingVisits(true);
     try {
       const res = await fetch('/api/visits/open', { cache: 'no-store' });
+      if (res.status === 401) {
+        toast.error('Não autorizado');
+        return;
+      }
       const json = await parseJsonSafe(res);
       if (json.ok) setOpenVisits(json.data || []);
     } finally {
@@ -63,6 +67,10 @@ export default function Home() {
         signal: controller.signal,
       });
       clearTimeout(timeout);
+      if (res.status === 401) {
+        toast.error('Não autorizado');
+        return;
+      }
       const json = await parseJsonSafe(res);
       if (json.ok === false) {
         toast.error(json.error || 'Erro na verificação da placa.');
@@ -105,23 +113,33 @@ export default function Home() {
 
   const onCheckout = async (visitId: string) => {
     setBusyVisitId(visitId);
+    const prevVisits = openVisits;
     setOpenVisits((prev) => prev.filter((v) => v.id !== visitId));
+    let unauthorized = false;
     try {
       const res = await fetch(`/api/visits/${visitId}/checkout`, {
         method: 'POST',
         cache: 'no-store',
       });
-      const json = await parseJsonSafe(res);
-      if (!json.ok) {
-        throw new Error(json.error || 'Falha na saída.');
+      if (res.status === 401) {
+        toast.error('Não autorizado');
+        setOpenVisits(prevVisits);
+        unauthorized = true;
+      } else {
+        const json = await parseJsonSafe(res);
+        if (!json.ok) {
+          throw new Error(json.error || 'Falha na saída.');
+        }
       }
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : String(e));
-      } finally {
-        setBusyVisitId(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusyVisitId(null);
+      if (!unauthorized) {
         await loadOpenVisits();
       }
-    };
+    }
+  };
 
   return (
     <div className="space-y-6">
