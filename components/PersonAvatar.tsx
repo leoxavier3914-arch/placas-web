@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 import { apiFetch, parseJsonSafe } from '@/lib/api';
 import { Person } from '@/types';
@@ -20,6 +19,7 @@ export default function PersonAvatar({ person, onUpdated }: Props) {
     if (!file) return;
     setLoading(true);
     try {
+      const { supabase } = await import('@/lib/supabaseClient');
       const ext = file.name.split('.').pop();
       const filePath = `${person.id}-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
