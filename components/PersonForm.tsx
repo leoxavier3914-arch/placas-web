@@ -66,10 +66,10 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
         error?: string;
       }>(res);
       if (!json.ok) {
-        toast.error(json.error || 'Falha ao cadastrar pessoa.');
+        toast.error(json.error || 'Falha ao cadastrar visitante.');
         return;
       }
-      toast.success('Pessoa cadastrada com sucesso!');
+      toast.success('Visitante cadastrado com sucesso!');
       setFullName('');
       setDoc('');
       setNotes('');
@@ -85,7 +85,7 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
 
   return (
     <div className="rounded border bg-white p-4">
-      <h2 className="mb-3 text-lg font-medium">Pessoa</h2>
+      <h2 className="mb-3 text-lg font-medium">Visitante</h2>
       <div className="space-y-3">
         <div>
           <label className="block text-sm">Nome completo *</label>
@@ -126,7 +126,7 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
             className="w-full rounded border px-3 py-2"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Anotações sobre a pessoa"
+            placeholder="Anotações sobre o visitante"
             rows={3}
           />
         </div>
@@ -135,7 +135,7 @@ export default function PersonForm({ vehicles, onSaved }: Props) {
           className="rounded bg-green-600 px-4 py-2 text-white"
           disabled={loading}
         >
-          {loading ? 'Salvando...' : 'Salvar Pessoa'}
+          {loading ? 'Salvando...' : 'Salvar Visitante'}
         </button>
       </div>
     </div>

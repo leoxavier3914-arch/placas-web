@@ -5,12 +5,17 @@ import { logError } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import { parseJsonSafe, apiFetch } from '@/lib/api';
 import VehicleCard from '@/components/VehicleCard';
+import PersonForm from '@/components/PersonForm';
+import VehicleForm from '@/components/VehicleForm';
 import { Person, Vehicle, VehiclePerson } from '@/types';
 
 export default function VeiculosPage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehiclePeople, setVehiclePeople] = useState<Record<string, VehiclePerson[]>>({});
+  const [showOptions, setShowOptions] = useState(false);
+  const [showPerson, setShowPerson] = useState(false);
+  const [showVehicle, setShowVehicle] = useState(false);
 
   const loadPeople = async () => {
     try {
@@ -63,9 +68,22 @@ export default function VeiculosPage() {
     await loadVehiclePeople();
   };
 
+  const reloadData = async () => {
+    await loadPeople();
+    await reloadVehiclesAndLinks();
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Veículos</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Veículos</h1>
+        <button
+          onClick={() => setShowOptions(true)}
+          className="rounded bg-blue-600 px-4 py-2 text-white"
+        >
+          Novo
+        </button>
+      </div>
       {vehicles.length === 0 ? (
         <p className="text-sm text-gray-500">Nenhum veículo cadastrado.</p>
       ) : (
@@ -79,6 +97,83 @@ export default function VeiculosPage() {
               onUpdated={reloadVehiclesAndLinks}
             />
           ))}
+        </div>
+      )}
+
+      {showOptions && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+          <div className="w-80 space-y-3 rounded bg-white p-4">
+            <h2 className="text-lg font-medium">Novo</h2>
+            <button
+              onClick={() => {
+                setShowOptions(false);
+                setShowPerson(true);
+              }}
+              className="w-full rounded bg-blue-600 px-4 py-2 text-white"
+            >
+              Novo Visitante
+            </button>
+            <button
+              onClick={() => {
+                setShowOptions(false);
+                setShowVehicle(true);
+              }}
+              className="w-full rounded bg-green-600 px-4 py-2 text-white"
+            >
+              Novo Veículo
+            </button>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowOptions(false)}
+                className="rounded border px-3 py-2"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPerson && (
+        <div className="fixed inset-0 overflow-y-auto bg-black/50 p-4">
+          <div className="mx-auto w-full max-w-md">
+            <PersonForm
+              vehicles={vehicles}
+              onSaved={async () => {
+                await reloadData();
+                setShowPerson(false);
+              }}
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={() => setShowPerson(false)}
+                className="rounded border bg-white px-4 py-2"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showVehicle && (
+        <div className="fixed inset-0 overflow-y-auto bg-black/50 p-4">
+          <div className="mx-auto w-full max-w-md">
+            <VehicleForm
+              onSaved={async () => {
+                await reloadData();
+                setShowVehicle(false);
+              }}
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={() => setShowVehicle(false)}
+                className="rounded border bg-white px-4 py-2"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
