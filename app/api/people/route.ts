@@ -15,6 +15,7 @@ const personSchema = z.object({
   phone: z.string().trim().nullish(),
   email: z.string().trim().nullish(),
   notes: z.string().trim().nullish(),
+  photo_url: z.string().url().nullish(),
 });
 
 export async function GET() {
@@ -23,7 +24,7 @@ export async function GET() {
     const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('people')
-      .select('id, full_name, doc_number, phone, email, notes')
+      .select('id, full_name, doc_number, phone, email, notes, photo_url')
       .eq('company_id', companyId)
       .order('full_name');
     if (error) {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { full_name, doc_number, phone, email, notes } = parsed.data;
+    const { full_name, doc_number, phone, email, notes, photo_url } = parsed.data;
 
     const companyId = env.COMPANY_ID;
     const insert = {
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
       phone: phone || null,
       email: email || null,
       notes: notes || null,
+      photo_url: photo_url || null,
       // se sua tabela tiver defaults para doc_type/doc_country (ex.: 'CPF'/'BR'), deixe que o banco aplique
     };
 
