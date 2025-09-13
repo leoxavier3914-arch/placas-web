@@ -24,7 +24,7 @@ export default function PersonAvatar({ person, onUpdated }: Props) {
       const filePath = `${person.id}-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('people')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
       const { data } = supabase.storage.from('people').getPublicUrl(filePath);
       const photoUrl = data.publicUrl;
