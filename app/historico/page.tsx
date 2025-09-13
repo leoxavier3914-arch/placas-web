@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 
 type Item = {
   id: string;
@@ -43,7 +43,7 @@ export default function HistoricoPage() {
       const params = new URLSearchParams({
         start, end, page: String(p), pageSize: String(pageSize),
       });
-      const res = await fetch(`/api/visits/history?${params.toString()}`);
+      const res = await apiFetch(`/api/visits/history?${params.toString()}`);
       const json = (await parseJsonSafe(res)) as ApiResp;
       if (!json.ok) {
         alert(json.error || 'Falha ao consultar histórico.');
@@ -64,7 +64,7 @@ export default function HistoricoPage() {
   const onPdfReport = async () => {
     try {
       const params = new URLSearchParams({ start, end });
-      const res = await fetch(`/api/pdf/history?${params.toString()}`, { method: 'POST' });
+      const res = await apiFetch(`/api/pdf/history?${params.toString()}`, { method: 'POST' });
       const json = await parseJsonSafe(res);
       if (!json.ok || !json.url) {
         alert(json.error ?? 'Falha ao gerar relatório');

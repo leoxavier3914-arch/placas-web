@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import { toast } from 'react-hot-toast';
  
 import ConfirmDeleteModal from './ConfirmDeleteModal';
@@ -30,7 +30,7 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
       return;
     }
     try {
-      const res = await fetch('/api/vehicle-people', {
+      const res = await apiFetch('/api/vehicle-people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleId: vehicle.id, personId: selection }),
@@ -49,7 +49,7 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
 
   const unlinkPerson = async (personId: string) => {
     try {
-      const res = await fetch('/api/vehicle-people', {
+      const res = await apiFetch('/api/vehicle-people', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleId: vehicle.id, personId }),
@@ -68,7 +68,7 @@ export default function VehicleCard({ vehicle, people, vehiclePeople, onUpdated 
   const editVehicle = () => setEditOpen(true);
   const deleteVehicle = async () => {
     try {
-      const res = await fetch(`/api/vehicles/${vehicle.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/vehicles/${vehicle.id}`, { method: 'DELETE' });
       const json = await parseJsonSafe<{ ok?: boolean; error?: string }>(res).catch(() => null);
       if (!res.ok || !json?.ok) {
         toast.error(json?.error || 'Falha ao excluir.');

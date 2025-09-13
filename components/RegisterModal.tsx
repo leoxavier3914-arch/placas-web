@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
 interface Props {
@@ -19,7 +19,7 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
     try {
       let personId: string | null = null;
       if (name.trim()) {
-        const resP = await fetch('/api/people', {
+        const resP = await apiFetch('/api/people', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ full_name: name.trim() }),
@@ -31,7 +31,7 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
         }
         personId = jsonP.data.id;
       }
-      const resV = await fetch('/api/vehicles', {
+      const resV = await apiFetch('/api/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plate }),
@@ -42,7 +42,7 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
         return;
       }
       if (personId) {
-        const resLink = await fetch('/api/vehicle-people', {
+        const resLink = await apiFetch('/api/vehicle-people', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ vehicleId: jsonV.data.id, personId }),
@@ -53,7 +53,7 @@ export default function RegisterModal({ plate, onClose, onSuccess }: Props) {
           return;
         }
       }
-      const resC = await fetch('/api/visits/checkin', {
+      const resC = await apiFetch('/api/visits/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vehicleId: jsonV.data.id, personId, purpose: 'despacho' }),

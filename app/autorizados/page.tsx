@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { normalizePlate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
  
-import { parseJsonSafe } from '@/lib/api';
+import { parseJsonSafe, apiFetch } from '@/lib/api';
 
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
  
@@ -20,7 +20,7 @@ export default function AutorizadosPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const fetchAuthorized = async () => {
-    const res = await fetch('/api/authorized', { cache: 'no-store' });
+    const res = await apiFetch('/api/authorized', { cache: 'no-store' });
     const json = await parseJsonSafe(res).catch(() => null);
     if (res.ok && json?.data) setAuthorized(json.data);
     else toast.error(json?.error || 'Falha ao carregar lista.');
@@ -38,7 +38,7 @@ export default function AutorizadosPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch(editId ? `/api/authorized/${editId}` : '/api/authorized', {
+      const res = await apiFetch(editId ? `/api/authorized/${editId}` : '/api/authorized', {
         method: editId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -82,7 +82,7 @@ export default function AutorizadosPage() {
 
   const remove = async (id: string) => {
     try {
-      const res = await fetch(`/api/authorized/${id}`, {
+      const res = await apiFetch(`/api/authorized/${id}`, {
         method: 'DELETE',
         cache: 'no-store',
       });
